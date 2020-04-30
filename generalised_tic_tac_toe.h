@@ -2,6 +2,7 @@
 
 #define GENERALISED_TIC_TAC_TOE_H
 
+#define M 4
 #define N 4
 #define player 'x'
 #define opponent 'o'
@@ -12,27 +13,30 @@ class Game{
     public:
         char** board;
         int legal_moves;
+        unsigned long long int hash_value;
         Game(){
-            board = new char*[N];
-            for(int i = 0 ; i < N ; i++)
+            board = new char*[M];
+            for(int i = 0 ; i < M ; i++)
                 board[i] = new char[N];
 
-            for(int i = 0 ; i < N ; i++){
+            for(int i = 0 ; i < M ; i++){
                 for(int j = 0 ; j < N ; j++)
                     board[i][j] = '_';
             }
 
-            legal_moves = N*N;
+            legal_moves = M*N;
+            hash_value = 0;
         }
 
+        Game(char** board_status); // set board to board_status
+
         ~Game(){
-            for(int i = 0 ; i < N ; i++)
+            for(int i = 0 ; i < M ; i++)
                 delete [] board[i];
 
             delete [] board;
         }
 
-        void set_board(char** board_status); // set board to board_status
         bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
         bool isTerminal(); //returns true for a terminal position(player 1 win / player 1 lose / draw)
         int evaluate(); // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate
