@@ -4,7 +4,7 @@
 using namespace std;
 using namespace std::chrono;
 
-#define inf -1 // find a better way to treat infinity
+#define inf -1
 
 bool isMobile = true; // determines whether pn_search is mobile or not
 
