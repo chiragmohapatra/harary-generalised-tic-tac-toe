@@ -4,8 +4,7 @@
 using namespace std;
 using namespace std::chrono;
 
-#define inf 1000000 // find a better way to treat infinity
-#define neginf -1000000
+#define inf -1 // find a better way to treat infinity
 
 bool isMobile = true; // determines whether pn_search is mobile or not
 
@@ -14,17 +13,14 @@ bool isMobile = true; // determines whether pn_search is mobile or not
 int ctr_mobile = 0;
 int ctr_immobile = 0;
 
-// return maximum of a and b
-int max(int a , int b){
-    if(a >= b)
+int min(int a , int b){
+    if(a == inf)
+        return b;
+
+    else if(b == inf)
         return a;
 
-    else
-        return b;
-}
-
-int min(int a , int b){
-    if(a <= b)
+    else if(a <= b)
         return a;
 
     else
@@ -112,16 +108,19 @@ void pn_node::evaluate_node(){
 }
 
 void pn_node::setProofandDisproofNumbers(){
+    bool proof_inf = false , disproof_inf = false;
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
 
             for(int i = 0 ; i < children.size() ; i++){
+                if(children[i]->disproof_number == inf)
+                    disproof_inf = true;
                 disproof_number+=(children[i]->disproof_number);
                 proof_number = min(proof_number , children[i]->proof_number);
             }
 
-            if(disproof_number >= inf)
+            if(disproof_inf)
                 disproof_number = inf;
         }
 
@@ -129,11 +128,13 @@ void pn_node::setProofandDisproofNumbers(){
             disproof_number = inf; proof_number = 0;
 
             for(int i = 0 ; i < children.size() ; i++){
+                if(children[i]->proof_number == inf)
+                    proof_inf = true;
                 proof_number+=(children[i]->proof_number);
                 disproof_number = min(disproof_number , children[i]->disproof_number);
             }
 
-            if(proof_number >= inf)
+            if(proof_inf)
                 proof_number = inf;
 
         }
@@ -180,22 +181,25 @@ pn_node* pn_node::selectMostProvingNode(){
     pn_node* n = this;
 
     while(n->isInternal){
-        int value = inf;
+        int value;
         pn_node* best;
 
         if(n->type){ // OR node
-            for(int i = 0 ; i < n->children.size() ; i++){
-                if(value > n->children[i]->proof_number){ // select one with the minimum proof number
+            value = n->children[0]->proof_number;
+            best = n->children[0];
+            for(int i = 1 ; i < n->children.size() ; i++){
+                if((value > n->children[i]->proof_number || value == inf) && n->children[i]->proof_number != inf){ // select one with the minimum proof number
                     best = n->children[i];
                     value = n->children[i]->proof_number;
                 }
-            
             }
         }
 
         else{ // AND node
-            for(int i = 0 ; i < n->children.size() ; i++){
-                if(value > n->children[i]->disproof_number){ // select one with the minimum disproof number
+            value = n->children[0]->disproof_number;
+            best = n->children[0];
+            for(int i = 1 ; i < n->children.size() ; i++){
+                if((value > n->children[i]->disproof_number || value == inf) && n->children[i]->disproof_number != inf){ // select one with the minimum disproof number
                     best = n->children[i];
                     value = n->children[i]->disproof_number;
                 }
@@ -272,8 +276,8 @@ int main(){
 
     newfile.open("./src/input.txt",ios::in);
     outfile1.open("./output/output.txt",ios::out);
-    outfile2.open("./output/times.txt",ios::out);
-    outfile3.open("./output/nodes.txt",ios::out);
+    outfile2.open("./output/times_pn_search(in microseconds).txt",ios::out);
+    outfile3.open("./output/nodes_pn_search.txt",ios::out);
 
     outfile2<<"The left column represents mobility enabled and right is mobility disabled\n";
     outfile3<<"The left column represents mobility enabled and right is mobility disabled\n";
