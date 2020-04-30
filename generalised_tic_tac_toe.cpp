@@ -6,38 +6,45 @@ using namespace std;
    The desired polyamino is Tippy:
             |X|X|
               |X|X| 
-    Sizes and polaminos can be updated , just update the evaluate function . 
-    Currently , evaluate function : gives +10 if player 1 wins and -10 in case of draw or player 1 lose . */
+    Sizes and polyaminos can be updated , just update the evaluate function . 
+    Currently , evaluate function : gives +10 if player 1 wins and -10 in case of draw or player 1 lose . 
+    The board is of size MxN i.e M rows and N columns*/
 
+#define M 4
 #define N 4
 #define player 'x'
 #define opponent 'o'
+
+unsigned long long int hash_func(char**);
 
 class Game{
     public:
         char** board;
         int legal_moves;
+        unsigned long long int hash_value;
         Game(){
-            board = new char*[N];
-            for(int i = 0 ; i < N ; i++)
+            board = new char*[M];
+            for(int i = 0 ; i < M ; i++)
                 board[i] = new char[N];
 
-            for(int i = 0 ; i < N ; i++){
+            for(int i = 0 ; i < M ; i++){
                 for(int j = 0 ; j < N ; j++)
                     board[i][j] = '_';
             }
 
-            legal_moves = N*N;
+            legal_moves = M*N;
+            hash_value = 0;
         }
 
+        Game(char** board_status); // set board to board_status
+
         ~Game(){
-            for(int i = 0 ; i < N ; i++)
+            for(int i = 0 ; i < M ; i++)
                 delete [] board[i];
 
             delete [] board;
         }
 
-        void set_board(char** board_status); // set board to board_status
         bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
         bool isTerminal(); //returns true for a terminal position(player 1 win / player 1 lose / draw)
         int evaluate(); // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate
@@ -47,9 +54,13 @@ class Game{
         void print_board();
 };
 
-void Game::set_board(char** board_status){
+Game::Game(char** board_status){
     int ctr = 0;
-    for(int i = 0 ; i < N ; i++){
+    board = new char*[M];
+    for(int i = 0 ; i < M ; i++)
+        board[i] = new char[N];
+
+    for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             board[i][j] = board_status[i][j];
             if(board_status[i][j] == '_')
@@ -58,6 +69,7 @@ void Game::set_board(char** board_status){
     }
 
     legal_moves = ctr;
+    hash_value = hash_func(board_status);
 }
 
 //returns true if legal moves are left and false otherwise(completely filled board)
@@ -74,24 +86,27 @@ bool Game::isTerminal(){
 
     int i , j;
 
-    for(i = 0 ; i < N ; i++){
+    if(!isMovesLeft())
+        return true;
+
+    for(i = 0 ; i < M ; i++){
         for(j = 0 ; j < (N-1) ; j++){
             if(board[i][j] == board[i][j+1] && board[i][j] != '_'){ // two in a row position like |X||X|
-                if(j < (N-2) && i < (N-1) && board[i+1][j+1] == board[i+1][j+2] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
+                if(j < (N-2) && i < (M-1) && board[i+1][j+1] == board[i+1][j+2] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
                                                                                                                         |X||X|
                                                                                                                            |X||X| */
                     return true;
 
                 }
 
-                else if(j > 0 && i < (N-1) && board[i+1][j-1] == board[i+1][j] && board[i+1][j] == board[i][j]){ /* Represents a position like
+                else if(j > 0 && i < (M-1) && board[i+1][j-1] == board[i+1][j] && board[i+1][j] == board[i][j]){ /* Represents a position like
                                                                                                                         |X||X|
                                                                                                                      |X||X| */
                     return true;
 
                 }
 
-                else if(i > 0 && i < (N-1) && board[i-1][j] == board[i][j] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
+                else if(i > 0 && i < (M-1) && board[i-1][j] == board[i][j] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
                                                                                                                     |X|
                                                                                                                     |X||X|
                                                                                                                        |X| */
@@ -99,7 +114,7 @@ bool Game::isTerminal(){
 
                 }
 
-                else if(i > 0 && i < (N-1) && board[i-1][j+1] == board[i][j] && board[i+1][j] == board[i][j]){  /* Represents a position like
+                else if(i > 0 && i < (M-1) && board[i-1][j+1] == board[i][j] && board[i+1][j] == board[i][j]){  /* Represents a position like
                                                                                                                         |X|
                                                                                                                      |X||X|
                                                                                                                      |X| */
@@ -111,9 +126,6 @@ bool Game::isTerminal(){
         }
     }
 
-    if(!isMovesLeft())
-        return true;
-
     return false;
 }
 
@@ -122,10 +134,10 @@ bool Game::isTerminal(){
 int Game::evaluate(){
     int i , j;
 
-    for(i = 0 ; i < N ; i++){
+    for(i = 0 ; i < M ; i++){
         for(j = 0 ; j < (N-1) ; j++){
             if(board[i][j] == board[i][j+1] && board[i][j] != '_'){ // two in a row position like |X||X|
-                if(j < (N-2) && i < (N-1) && board[i+1][j+1] == board[i+1][j+2] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
+                if(j < (N-2) && i < (M-1) && board[i+1][j+1] == board[i+1][j+2] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
                                                                                                                         |X||X|
                                                                                                                            |X||X| */
                     if(board[i][j] == player)
@@ -135,7 +147,7 @@ int Game::evaluate(){
 
                 }
 
-                else if(j > 0 && i < (N-1) && board[i+1][j-1] == board[i+1][j] && board[i+1][j] == board[i][j]){ /* Represents a position like
+                else if(j > 0 && i < (M-1) && board[i+1][j-1] == board[i+1][j] && board[i+1][j] == board[i][j]){ /* Represents a position like
                                                                                                                         |X||X|
                                                                                                                      |X||X| */
                     if(board[i][j] == player)
@@ -145,7 +157,7 @@ int Game::evaluate(){
 
                 }
 
-                else if(i > 0 && i < (N-1) && board[i-1][j] == board[i][j] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
+                else if(i > 0 && i < (M-1) && board[i-1][j] == board[i][j] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
                                                                                                                     |X|
                                                                                                                     |X||X|
                                                                                                                        |X| */
@@ -156,7 +168,7 @@ int Game::evaluate(){
 
                 }
 
-                else if(i > 0 && i < (N-1) && board[i-1][j+1] == board[i][j] && board[i+1][j] == board[i][j]){  /* Represents a position like
+                else if(i > 0 && i < (M-1) && board[i-1][j+1] == board[i][j] && board[i+1][j] == board[i][j]){  /* Represents a position like
                                                                                                                         |X|
                                                                                                                      |X||X|
                                                                                                                      |X| */
@@ -178,7 +190,7 @@ int Game::evaluate(){
 }
 
 bool Game::isValidMove(int row , int col){
-    if(row >= N || col >= N)
+    if(row >= M || col >= N)
         return false;
 
     if(board[row][col] != '_')
@@ -193,21 +205,31 @@ void Game::make_move(bool isPlayer , int row , int col){
         return;
 
     else{
-        if(isPlayer)
+        if(isPlayer){
             board[row][col] = player;
-        else
+            hash_value+=(pow(3,N*row + col));
+        }
+        else{
             board[row][col] = opponent;
+            hash_value+=(2*(pow(3,N*row + col)));
+        }
+
         legal_moves--;
     }
 }
 
 void Game::undo_move(int row , int col){
+    if(board[row][col] == player)
+        hash_value-=(pow(3,N*row + col));
+    else
+        hash_value-=(2*(pow(3,N*row + col)));
+
     board[row][col] = '_';
     legal_moves++;
 }
 
 void Game::print_board(){
-    for(int i = 0 ; i < N ; i++){
+    for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++)
             cout<<board[i][j]<<" ";
 
@@ -217,15 +239,15 @@ void Game::print_board(){
 
 // input a string of form 000011201.. till NxN where 0 represents _ , 1 respresents player and 2 represents opponent and it is row-wise
 char** make_board_from_file(string str){
-    char** board = new char*[N];
+    char** board = new char*[M];
     char c;
 
-    for(int i = 0 ; i < N ; i++)
+    for(int i = 0 ; i < M ; i++)
         board[i] = new char[N];
 
-    for(int i = 0 ; i < N ; i++){
+    for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
-            c = str.at(N*i + j);
+            c = str.at(M*i + j);
 
             if(c == '0')
                 board[i][j] = '_';
@@ -241,4 +263,19 @@ char** make_board_from_file(string str){
     }
 
     return board;
+}
+
+unsigned long long int hash_func(char** board){
+    unsigned long long int ctr = 0;
+
+    for(int i = 0 ; i < M ; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(board[i][j] == player)
+                ctr+=(pow(3,N*i + j));
+            else if(board[i][j] == opponent)
+                ctr+=(2*(pow(3,N*i + j)));
+        }
+    }
+
+    return ctr;
 }
