@@ -44,9 +44,7 @@ class pn_node{
         pn_node* parent;
         
         pn_node(char** board_status){
-            game = new Game();
-
-            game->set_board(board_status);
+            game = new Game(board_status);
         }
 
         void set_parent(pn_node* par){
@@ -76,7 +74,7 @@ class pn_node{
 
 void pn_node::generate_children(){
     
-    for(int i = 0 ; i < N ; i++){
+    for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(game->isValidMove(i,j)){
                 // make move
@@ -286,7 +284,7 @@ int main(){
         string temp;
 
         while(getline(newfile , temp)){
-            if(temp.length() == N*N){
+            if(temp.length() == M*N){
                 char** board = make_board_from_file(temp);
                 pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
@@ -319,7 +317,7 @@ int main(){
                 ctr_immobile = 0;
                 isMobile = true;
 
-                for(int i = 0 ; i < N ; i++)
+                for(int i = 0 ; i < M ; i++)
                     delete [] board[i];
 
                 delete [] board;
@@ -337,3 +335,4 @@ int main(){
     
     return 0;
 }
+
