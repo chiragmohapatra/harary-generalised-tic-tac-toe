@@ -9,19 +9,6 @@ using namespace std;
 
 // Assume that white represents player and black represents opponent
 
-/* polyamino is generalised such that the user has to enter the simplest form of the polyamino required in terms of a bitboard..start from the top left ideally
-   Enter the basic polyamino in MxN string type
-   example : 11000..(N times) 
-             01100...
-             00...
-             .
-             .
-             (M times)
-    is what I consider the simplest form of the polyamino Tippy |X||X| and similarly enter the reverse horizontal as well as the vertical forms
-                                                                   |X||X|
-    Do this for any polyamino that is required 
-    The basic concept is to store all the possible winning opportunities initially as an array of bitvectors and then for our board , perform bitwise AND with each
-    combination till the same combination is reached , that gives the winning condition .. This is done for both white and black */
 
 bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
     int size = M*N;
@@ -34,21 +21,10 @@ bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
     return temp;
 }
 
-bitset<(M+1)*(N+1)> expand_bitset_left_down(bitset<M*N> bset){
-    int size = M*N;
-    bitset<(M+1)*(N+1)> temp;
-
-    for(int i = 0 ; i < size ; i++){
-        temp[i + (N+1) + i/N] = bset[i];
-    }
-
-    return temp;
-}
-
 class Game{
     public:
-        bitset<M*N> whites; // the representation is rowwise with 1 if white is present and 0 if not
-        bitset<M*N> blacks;
+        bitset<(M+1)*(N+1)> expanded_whites; // the representation is rowwise with 1 if white is present and 0 if not
+        bitset<(M+1)*(N+1)> expanded_blacks;
         int legal_moves;
 
         Game(){
@@ -56,10 +32,10 @@ class Game{
         }
 
         Game(bitset<M*N> white_pos , bitset<M*N> black_pos){
-            whites = white_pos;
-            blacks = black_pos;
+            expanded_whites = expand_bitset_right_down(white_pos);
+            expanded_blacks = expand_bitset_right_down(black_pos);
 
-            legal_moves = M*N - whites.count() - blacks.count();
+            legal_moves = M*N - white_pos.count() - black_pos.count();
         }
 
         bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
@@ -81,122 +57,63 @@ bool Game::isMovesLeft(){
 }
 
 bool Game::isTerminal(){
-    if(!isMovesLeft())
-        return true;
-
-    bitset<(M+1)*(N+1)> expanded_whites1 = expand_bitset_right_down(whites);
-    bitset<(M+1)*(N+1)> expanded_whites2 = expand_bitset_left_down(whites);
-    bitset<(M+1)*(N+1)> expanded_blacks1 = expand_bitset_right_down(blacks);
-    bitset<(M+1)*(N+1)> expanded_blacks2 = expand_bitset_left_down(blacks);
-
-    bitset<(M+1)*(N+1)> tempw1 = expanded_whites1 >> 1; // right
-    bitset<(M+1)*(N+1)> tempw2 = tempw1 >> (N+1); // right and down
-    bitset<(M+1)*(N+1)> tempw3 = tempw2 >> 1; // right , down , right
-
-    bitset<(M+1)*(N+1)> tempw4 = expanded_whites1 >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempw5 = tempw4 >> 1; // down , right
-    bitset<(M+1)*(N+1)> tempw6 = tempw5 >> (N+1);  // down , right , down
-
-    bitset<(M+1)*(N+1)> tempw7 = expanded_whites2 << 1; // left
-    bitset<(M+1)*(N+1)> tempw8 = tempw7 >> (N+1); // left and down
-    bitset<(M+1)*(N+1)> tempw9 = tempw8 << 1; // left , down , left
-
-    bitset<(M+1)*(N+1)> tempw10 = expanded_whites2 >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempw11= tempw10 << 1; // down , left
-    bitset<(M+1)*(N+1)> tempw12 = tempw11 >> (N+1);  // down , left , down
-
-    
-    bitset<(M+1)*(N+1)> tempb1 = expanded_blacks1 >> 1;
-    bitset<(M+1)*(N+1)> tempb2 = tempb1 >> (N+1);
-    bitset<(M+1)*(N+1)> tempb3 = tempb2 >> 1;
-
-    bitset<(M+1)*(N+1)> tempb4 = expanded_blacks1 >> (N+1);
-    bitset<(M+1)*(N+1)> tempb5 = tempb4 >> 1;
-    bitset<(M+1)*(N+1)> tempb6 = tempb5 >> (N+1);
-
-    bitset<(M+1)*(N+1)> tempb7 = expanded_blacks2 << 1; // left
-    bitset<(M+1)*(N+1)> tempb8 = tempb7 >> (N+1); // left and down
-    bitset<(M+1)*(N+1)> tempb9 = tempb8 << 1; // left , down , left
-
-    bitset<(M+1)*(N+1)> tempb10 = expanded_blacks2 >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempb11= tempb10 << 1; // down , left
-    bitset<(M+1)*(N+1)> tempb12 = tempb11 >> (N+1);  // down , left , down
-
-
-
-    int cntw1 = (expanded_whites1 & tempw1 & tempw2 & tempw3).count();
-    int cntw2 = (expanded_whites1 & tempw4 & tempw5 & tempw6).count();
-    int cntw3 = (expanded_whites2 & tempw7 & tempw8 & tempw9).count();
-    int cntw4 = (expanded_whites2 & tempw10 & tempw11 & tempw12).count();
-
-    int cntb1 = (expanded_blacks1 & tempb1 & tempb2 & tempb3).count();
-    int cntb2 = (expanded_blacks1 & tempb4 & tempb5 & tempb6).count();
-    int cntb3 = (expanded_blacks2 & tempb7 & tempb8 & tempb9).count();
-    int cntb4 = (expanded_blacks2 & tempb10 & tempb11 & tempb12).count();
-
-    if(cntw1 == 1 || cntw2 == 1 || cntw3 == 1 || cntw4 == 1 || cntb1 == 1 || cntb2 == 1 || cntb3 == 1 || cntb4 == 1)
-        return true;
-
-    else
+    if(evaluate() == 0)
         return false;
+
+    else{
+        return true;
+    }
 }
 
 int Game::evaluate(){
 
-    bitset<(M+1)*(N+1)> expanded_whites1 = expand_bitset_right_down(whites);
-    bitset<(M+1)*(N+1)> expanded_whites2 = expand_bitset_left_down(whites);
-    bitset<(M+1)*(N+1)> expanded_blacks1 = expand_bitset_right_down(blacks);
-    bitset<(M+1)*(N+1)> expanded_blacks2 = expand_bitset_left_down(blacks);
-
-    bitset<(M+1)*(N+1)> tempw1 = expanded_whites1 >> 1; // right
+    bitset<(M+1)*(N+1)> tempw1 = expanded_whites >> 1; // right
     bitset<(M+1)*(N+1)> tempw2 = tempw1 >> (N+1); // right and down
     bitset<(M+1)*(N+1)> tempw3 = tempw2 >> 1; // right , down , right
 
-    bitset<(M+1)*(N+1)> tempw4 = expanded_whites1 >> (N+1); // down
+    bitset<(M+1)*(N+1)> tempw4 = expanded_whites >> (N+1); // down
     bitset<(M+1)*(N+1)> tempw5 = tempw4 >> 1; // down , right
     bitset<(M+1)*(N+1)> tempw6 = tempw5 >> (N+1);  // down , right , down
 
-    bitset<(M+1)*(N+1)> tempw7 = expanded_whites2 << 1; // left
-    bitset<(M+1)*(N+1)> tempw8 = tempw7 >> (N+1); // left and down
-    bitset<(M+1)*(N+1)> tempw9 = tempw8 << 1; // left , down , left
+    bitset<(M+1)*(N+1)> tempw7 = expanded_whites >> 1; // right
+    bitset<(M+1)*(N+1)> tempw8 = tempw7 << (N+1); // right and top
+    bitset<(M+1)*(N+1)> tempw9 = tempw8 >> 1; // right , top , right
 
-    bitset<(M+1)*(N+1)> tempw10 = expanded_whites2 >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempw11= tempw10 << 1; // down , left
-    bitset<(M+1)*(N+1)> tempw12 = tempw11 >> (N+1);  // down , left , down
+    bitset<(M+1)*(N+1)> tempw10 = expanded_whites << (N+1); // top
+    bitset<(M+1)*(N+1)> tempw11= tempw10 >> 1; // top , right
+    bitset<(M+1)*(N+1)> tempw12 = tempw11 << (N+1);  // down , left , down
 
     
-    bitset<(M+1)*(N+1)> tempb1 = expanded_blacks1 >> 1;
+    bitset<(M+1)*(N+1)> tempb1 = expanded_blacks >> 1;
     bitset<(M+1)*(N+1)> tempb2 = tempb1 >> (N+1);
     bitset<(M+1)*(N+1)> tempb3 = tempb2 >> 1;
 
-    bitset<(M+1)*(N+1)> tempb4 = expanded_blacks1 >> (N+1);
+    bitset<(M+1)*(N+1)> tempb4 = expanded_blacks >> (N+1);
     bitset<(M+1)*(N+1)> tempb5 = tempb4 >> 1;
     bitset<(M+1)*(N+1)> tempb6 = tempb5 >> (N+1);
 
-    bitset<(M+1)*(N+1)> tempb7 = expanded_blacks2 << 1; // left
-    bitset<(M+1)*(N+1)> tempb8 = tempb7 >> (N+1); // left and down
-    bitset<(M+1)*(N+1)> tempb9 = tempb8 << 1; // left , down , left
+    bitset<(M+1)*(N+1)> tempb7 = expanded_blacks >> 1; // left
+    bitset<(M+1)*(N+1)> tempb8 = tempb7 << (N+1); // left and down
+    bitset<(M+1)*(N+1)> tempb9 = tempb8 >> 1; // left , down , left
 
-    bitset<(M+1)*(N+1)> tempb10 = expanded_blacks2 >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempb11= tempb10 << 1; // down , left
-    bitset<(M+1)*(N+1)> tempb12 = tempb11 >> (N+1);  // down , left , down
+    bitset<(M+1)*(N+1)> tempb10 = expanded_blacks << (N+1); // down
+    bitset<(M+1)*(N+1)> tempb11= tempb10 >> 1; // down , left
+    bitset<(M+1)*(N+1)> tempb12 = tempb11 << (N+1);  // down , left , down
 
+    bool cntw1 = (expanded_whites & tempw1 & tempw2 & tempw3).any();
+    bool cntw2 = (expanded_whites & tempw4 & tempw5 & tempw6).any();
+    bool cntw3 = (expanded_whites & tempw7 & tempw8 & tempw9).any();
+    bool cntw4 = (expanded_whites & tempw10 & tempw11 & tempw12).any();
 
+    bool cntb1 = (expanded_blacks & tempb1 & tempb2 & tempb3).any();
+    bool cntb2 = (expanded_blacks & tempb4 & tempb5 & tempb6).any();
+    bool cntb3 = (expanded_blacks & tempb7 & tempb8 & tempb9).any();
+    bool cntb4 = (expanded_blacks & tempb10 & tempb11 & tempb12).any();
 
-    int cntw1 = (expanded_whites1 & tempw1 & tempw2 & tempw3).count();
-    int cntw2 = (expanded_whites1 & tempw4 & tempw5 & tempw6).count();
-    int cntw3 = (expanded_whites2 & tempw7 & tempw8 & tempw9).count();
-    int cntw4 = (expanded_whites2 & tempw10 & tempw11 & tempw12).count();
-
-    int cntb1 = (expanded_blacks1 & tempb1 & tempb2 & tempb3).count();
-    int cntb2 = (expanded_blacks1 & tempb4 & tempb5 & tempb6).count();
-    int cntb3 = (expanded_blacks2 & tempb7 & tempb8 & tempb9).count();
-    int cntb4 = (expanded_blacks2 & tempb10 & tempb11 & tempb12).count();
-
-    if(cntw1 == 1 || cntw2 == 1 || cntw3 == 1 || cntw4 == 1)
+    if(cntw1  || cntw2  || cntw3|| cntw4)
         return 10;
 
-    else if(cntb1 == 1 || cntb2 == 1 || cntb3 == 1 || cntb4 == 1)
+    else if(cntb1  || cntb2 || cntb3 || cntb4)
         return -10;
     
     else if(!isMovesLeft())
@@ -210,9 +127,9 @@ bool Game::isValidMove(int row, int col){
     if(row >= M || col >= N)
         return false;
 
-    int index = M*N - (M*row + col) - 1;
+    int index = (M+1)*(N+1) - ((N+1)*row + col) - 1;
 
-    if(whites.test(index) || blacks.test(index))
+    if(expanded_whites.test(index) || expanded_blacks.test(index))
         return false;
 
     else
@@ -220,37 +137,36 @@ bool Game::isValidMove(int row, int col){
 }
 
 void Game::make_move(bool isPlayer , int row , int col){
-    int index = M*N - (M*row + col) - 1;
+    int index = (M+1)*(N+1) - ((N+1)*row + col) - 1;
 
     if(isPlayer)
-        whites.set(index);
+        expanded_whites.set(index);
     else
-        blacks.set(index);
+        expanded_blacks.set(index);
 
     legal_moves--;
 }
 
 void Game::undo_move(int row , int col){
-    int index = M*N - (M*row + col) - 1;
+    int index = (M+1)*(N+1) - ((N+1)*row + col) - 1;
 
-    whites.reset(index);
-    blacks.reset(index);
+    expanded_whites.reset(index);
+    expanded_blacks.reset(index);
 
     legal_moves++;
 }
 
 void Game::print_board(){
 
-    for(int i = (M*N - 1) ; i >= 0 ; i--){
-        if(whites.test(i))
+    for(int i = ((M+1)*(N+1) - 1) ; i > N ; i--){
+        if(i % (N+1) == 0)
+            cout<<endl;
+        else if(expanded_whites.test(i))
             cout<<"x ";
-        else if(blacks.test(i))
+        else if(expanded_blacks.test(i))
             cout<<"o ";
         else
             cout<<"_ ";
-        
-        if(i % N == 0)
-            cout<<endl;
     }
 }
 
@@ -271,27 +187,3 @@ pair<bitset<M*N>,bitset<M*N>>* make_board_from_file(string str){
 
     return new pair<bitset<M*N>,bitset<M*N>>(whites,blacks);
 }
-
-/*void print_as_board(bitset<M*N> str){
-    for(int i = (M*N - 1) ; i >= 0 ; i--){
-        if(str.test(i))
-            cout<<"x ";
-        else
-            cout<<"_ ";
-        
-        if(i % N == 0)
-            cout<<endl;
-    }
-}
-
-int main(){
-
-    bitset<16> whites(string("0110001100000000"));
-    bitset<16> blacks(string("1001000011000000"));
-
-    cout<<expand_bitset(whites)<<endl<<expand_bitset(blacks)<<endl;
-
-
-    return 0;
-}*/
-
