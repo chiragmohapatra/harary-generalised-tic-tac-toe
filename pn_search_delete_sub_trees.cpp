@@ -33,8 +33,7 @@ class pn_node{
 
     Game* game; // Todo just store moves instead of complte game in each node
     pn_node** children; // an array of pointers to the children
-    bool type; // true for OR node and false for AND node
-    char value; 
+    bool type; // true for OR node and false for AND node 
     bool isInternal; // true for internal node and false otherwise
     int no_of_children;
     void generate_children(); // generates children of the node
@@ -43,10 +42,12 @@ class pn_node{
 
         int proof_number , disproof_number;
         pn_node* parent;
+        char value;
         
         pn_node(char** board_status){
             game = new Game(board_status);
             no_of_children = game->legal_moves;
+            value = '2';
         }
 
         void set_parent(pn_node* par){
@@ -80,6 +81,7 @@ void pn_node::delete_sub_tree(){
 
     delete [] children;
     isInternal = false;
+    no_of_children = 0;
 }
 
 void pn_node::generate_children(){
@@ -106,6 +108,9 @@ void pn_node::generate_children(){
 }
 
 void pn_node::evaluate_node(){
+    if(value == '1' || value == '0')
+        return;
+
     int score = game->evaluate();
 
     if(score == 10)
@@ -255,8 +260,15 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         if(n->proof_number == old_proof && n->disproof_number == old_disproof)
             return n; // if unchanged , then return
 
-        if(n->proof_number == 0 || n->disproof_number == 0)
+        else if(n->proof_number == 0){
             n->delete_sub_tree();
+            n->value = '1';
+        }
+
+        else if(n->disproof_number == 0){
+            n->delete_sub_tree();
+            n->value = '0';
+        }
 
         n = n->parent;
     }
@@ -273,7 +285,7 @@ void pn_search(pn_node* root){
     while(root->proof_number != 0 && root->disproof_number != 0){
         pn_node* most_proving = current->selectMostProvingNode();
         most_proving->ExpandNode();
-        //cout<<"Most proving :";most_proving->print_data();
+        //most_proving->print_data();
         current = update_ancestors(most_proving , root);
         if(isMobile)
             ctr_mobile++;
