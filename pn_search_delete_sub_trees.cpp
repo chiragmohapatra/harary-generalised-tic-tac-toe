@@ -76,6 +76,9 @@ class pn_node{
 };
 
 void pn_node::delete_sub_tree(){
+    if(value == '1' || value == '0')
+        return;
+
     for(int i = 0 ; i < no_of_children ; i++)
         delete children[i];
 
@@ -85,6 +88,9 @@ void pn_node::delete_sub_tree(){
 }
 
 void pn_node::generate_children(){
+
+    if(no_of_children == 0)
+        return;
 
     int k = 0;
     children = new pn_node*[no_of_children];
@@ -124,7 +130,7 @@ void pn_node::evaluate_node(){
 }
 
 void pn_node::setProofandDisproofNumbers(){
-    bool proof_inf = false , disproof_inf = false;
+    bool proof_inf = false , disproof_inf = false , proof_zero = false , disproof_zero = false;
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
@@ -134,10 +140,15 @@ void pn_node::setProofandDisproofNumbers(){
                     disproof_inf = true;
                 disproof_number+=(children[i]->disproof_number);
                 proof_number = min(proof_number , children[i]->proof_number);
+                if(children[i]->proof_number == 0)
+                    proof_zero = true;
             }
 
             if(disproof_inf)
                 disproof_number = inf;
+
+            if(proof_zero)
+                proof_number = 0;
         }
 
         else{ // AND node
@@ -148,10 +159,15 @@ void pn_node::setProofandDisproofNumbers(){
                     proof_inf = true;
                 proof_number+=(children[i]->proof_number);
                 disproof_number = min(disproof_number , children[i]->disproof_number);
+                if(children[i]->disproof_number == 0)
+                    disproof_zero = true;
             }
 
             if(proof_inf)
                 proof_number = inf;
+
+            if(disproof_zero)
+                disproof_number = 0;
 
         }
     }
@@ -184,7 +200,6 @@ void pn_node::setProofandDisproofNumbers(){
                         proof_number = game->legal_moves;
                         disproof_number = 1;
                     }
-
                 }
                 
                 break;
@@ -230,6 +245,8 @@ pn_node* pn_node::selectMostProvingNode(){
 }
 
 void pn_node::ExpandNode(){
+    if(value == '1' || value == '0')
+        return;
     generate_children();
 
     for(int i = 0 ; i < no_of_children ; i++){
@@ -263,11 +280,15 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         else if(n->proof_number == 0){
             n->delete_sub_tree();
             n->value = '1';
+            n->proof_number = 0;
+            n->disproof_number = inf;
         }
 
         else if(n->disproof_number == 0){
             n->delete_sub_tree();
             n->value = '0';
+            n->proof_number = inf;
+            n->disproof_number = 0;
         }
 
         n = n->parent;
@@ -292,7 +313,7 @@ void pn_search(pn_node* root){
         else
             ctr_immobile++;
         //cout<<"Current :";current->print_data();
-        //cout<<root->proof_number<<" "<<root->disproof_number;
+        cout<<root->proof_number<<" "<<root->disproof_number<<endl;
     }
 }
 
@@ -313,6 +334,7 @@ int main(){
 
         while(getline(newfile , temp)){
             if(temp.length() == M*N){
+                isMobile = false;
                 char** board = make_board_from_file(temp);
                 pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
@@ -326,7 +348,7 @@ int main(){
                 else
                     outfile1<<"Disproved\n";
 
-                isMobile = false;
+                /*isMobile = false;
 
                 pn_node* root_immobile = new pn_node(board);
                 root_immobile->set_parent(NULL);
@@ -339,7 +361,7 @@ int main(){
                 auto duration1 = duration_cast<microseconds>(stop1 - start1);
                 
                 outfile2<<duration.count()<<"\t"<<duration1.count()<<endl; 
-                outfile3<<ctr_mobile<<"\t"<<ctr_immobile<<endl;
+                outfile3<<ctr_mobile<<"\t"<<ctr_immobile<<endl;*/
 
                 ctr_mobile = 0;
                 ctr_immobile = 0;
@@ -350,7 +372,7 @@ int main(){
 
                 delete [] board;
                 delete root_mobile;
-                delete root_immobile;
+                //delete root_immobile;
             }
         }
     }
