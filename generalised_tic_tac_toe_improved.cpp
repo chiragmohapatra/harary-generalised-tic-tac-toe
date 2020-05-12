@@ -10,6 +10,7 @@ using namespace std;
 // Assume that white represents player and black represents opponent
 
 
+
 bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
     int size = M*N;
     bitset<(M+1)*(N+1)> temp;
@@ -71,49 +72,56 @@ int Game::evaluate(){
     bitset<(M+1)*(N+1)> tempw2 = tempw1 >> (N+1); // right and down
     bitset<(M+1)*(N+1)> tempw3 = tempw2 >> 1; // right , down , right
 
-    bitset<(M+1)*(N+1)> tempw4 = expanded_whites >> (N+1); // down
-    bitset<(M+1)*(N+1)> tempw5 = tempw4 >> 1; // down , right
-    bitset<(M+1)*(N+1)> tempw6 = tempw5 >> (N+1);  // down , right , down
+    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+        return 10;
 
-    bitset<(M+1)*(N+1)> tempw7 = expanded_whites >> 1; // right
-    bitset<(M+1)*(N+1)> tempw8 = tempw7 << (N+1); // right and top
-    bitset<(M+1)*(N+1)> tempw9 = tempw8 >> 1; // right , top , right
+    tempw1 = expanded_whites >> (N+1); // down
+    tempw2 = tempw1 >> 1; // down , right
+    tempw3 = tempw2 >> (N+1);  // down , right , down
 
-    bitset<(M+1)*(N+1)> tempw10 = expanded_whites << (N+1); // top
-    bitset<(M+1)*(N+1)> tempw11= tempw10 >> 1; // top , right
-    bitset<(M+1)*(N+1)> tempw12 = tempw11 << (N+1);  // down , left , down
+    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+        return 10;
 
-    
+    tempw1 = expanded_whites >> 1; // right
+    tempw2 = tempw1 << (N+1); // right and top
+    tempw3 = tempw2 >> 1; // right , top , right
+
+    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+        return 10;
+
+    tempw1 = expanded_whites << (N+1); // top
+    tempw2= tempw1 >> 1; // top , right
+    tempw3 = tempw2 << (N+1);  // down , left , down
+
+    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+        return 10;
+
     bitset<(M+1)*(N+1)> tempb1 = expanded_blacks >> 1;
     bitset<(M+1)*(N+1)> tempb2 = tempb1 >> (N+1);
     bitset<(M+1)*(N+1)> tempb3 = tempb2 >> 1;
 
-    bitset<(M+1)*(N+1)> tempb4 = expanded_blacks >> (N+1);
-    bitset<(M+1)*(N+1)> tempb5 = tempb4 >> 1;
-    bitset<(M+1)*(N+1)> tempb6 = tempb5 >> (N+1);
+    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+        return -10;
 
-    bitset<(M+1)*(N+1)> tempb7 = expanded_blacks >> 1; // left
-    bitset<(M+1)*(N+1)> tempb8 = tempb7 << (N+1); // left and down
-    bitset<(M+1)*(N+1)> tempb9 = tempb8 >> 1; // left , down , left
+    tempb1 = expanded_blacks >> (N+1);
+    tempb2 = tempb1 >> 1;
+    tempb3 = tempb2 >> (N+1);
 
-    bitset<(M+1)*(N+1)> tempb10 = expanded_blacks << (N+1); // down
-    bitset<(M+1)*(N+1)> tempb11= tempb10 >> 1; // down , left
-    bitset<(M+1)*(N+1)> tempb12 = tempb11 << (N+1);  // down , left , down
+    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+        return -10;
 
-    bool cntw1 = (expanded_whites & tempw1 & tempw2 & tempw3).any();
-    bool cntw2 = (expanded_whites & tempw4 & tempw5 & tempw6).any();
-    bool cntw3 = (expanded_whites & tempw7 & tempw8 & tempw9).any();
-    bool cntw4 = (expanded_whites & tempw10 & tempw11 & tempw12).any();
+    tempb1 = expanded_blacks >> 1; // left
+    tempb2 = tempb1 << (N+1); // left and down
+    tempb3 = tempb2 >> 1; // left , down , left
 
-    bool cntb1 = (expanded_blacks & tempb1 & tempb2 & tempb3).any();
-    bool cntb2 = (expanded_blacks & tempb4 & tempb5 & tempb6).any();
-    bool cntb3 = (expanded_blacks & tempb7 & tempb8 & tempb9).any();
-    bool cntb4 = (expanded_blacks & tempb10 & tempb11 & tempb12).any();
+    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+        return -10;
 
-    if(cntw1  || cntw2  || cntw3|| cntw4)
-        return 10;
+    tempb1 = expanded_blacks << (N+1); // down
+    tempb2 = tempb1 >> 1; // down , left
+    tempb3 = tempb2 << (N+1);  // down , left , down
 
-    else if(cntb1  || cntb2 || cntb3 || cntb4)
+    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
         return -10;
     
     else if(!isMovesLeft())
@@ -187,3 +195,6 @@ pair<bitset<M*N>,bitset<M*N>>* make_board_from_file(string str){
 
     return new pair<bitset<M*N>,bitset<M*N>>(whites,blacks);
 }
+
+
+
