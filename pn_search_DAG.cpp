@@ -238,6 +238,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
     nodes.push(n);
 
     pn_node* dummy;
+    queue <pn_node*> base_ancestors;
 
     while(!nodes.empty()){
         dummy = nodes.front();
@@ -248,13 +249,16 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         dummy->setProofandDisproofNumbers();
 
         if(old_proof == dummy->proof_number && old_disproof == dummy->disproof_number)
-            return dummy;
+            base_ancestors.push(dummy);
 
         else{
             for(int i = 0 ; i < dummy->parents.size() ; i++)
                 nodes.push(dummy->parents[i]);
         }
     }
+
+    if(base_ancestors.size() == 1)
+        return base_ancestors.front();
 
     root->setProofandDisproofNumbers();
     return root;
