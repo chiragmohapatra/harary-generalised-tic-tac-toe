@@ -32,10 +32,7 @@ class pn_node{
     // Todo replace board with a hash value and make a hash map
 
     Game* game; // Todo just store moves instead of complte game in each node
-    pn_node** children; // an array of pointers to the children
     bool type; // true for OR node and false for AND node 
-    bool isInternal; // true for internal node and false otherwise
-    int no_of_children;
     void generate_children(); // generates children of the node
     
     public:
@@ -43,6 +40,9 @@ class pn_node{
         int proof_number , disproof_number;
         pn_node* parent;
         char value;
+        int no_of_children;
+        pn_node** children; // an array of pointers to the children
+        bool isInternal; // true for internal node and false otherwise
         
         pn_node(char** board_status){
             game = new Game(board_status);
@@ -191,7 +191,9 @@ void pn_node::setProofandDisproofNumbers(){
                 }
 
                 else{
-                    if(type){
+                    proof_number = 1;
+                    disproof_number = 1;
+                    /*if(type){
                         proof_number = 1;
                         disproof_number = game->legal_moves;
                     }
@@ -199,7 +201,7 @@ void pn_node::setProofandDisproofNumbers(){
                     else{
                         proof_number = game->legal_moves;
                         disproof_number = 1;
-                    }
+                    }*/
                 }
                 
                 break;
@@ -298,16 +300,29 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
     return root;
 }
 
+void delete_complete_tree(pn_node* root){
+    if(root == NULL)
+        return;
+
+    for(int i = 0 ; i < root->no_of_children && root->isInternal ; i++)
+        delete_complete_tree(root->children[i]);
+
+    delete root;
+}
+
 void pn_search_second(pn_node* root){
     root->evaluate_node();
     root->setProofandDisproofNumbers();
     pn_node* current = root;
+    int ctr = 0;
 
-    while(root->proof_number != 0 && root->disproof_number != 0){
+    while(root->proof_number != 0 && root->disproof_number != 0 && ctr < 100000){
         pn_node* most_proving = current->selectMostProvingNode();
         most_proving->ExpandNode();
         //most_proving->print_data();
         current = update_ancestors(most_proving , root);
+        ctr++;
+        //cout<<root->proof_number<<"\t"<<root->disproof_number<<endl; 
     }
 }
 
@@ -320,12 +335,13 @@ void pn_search_first(pn_node* root){
     while(root->proof_number != 0 && root->disproof_number != 0){
         pn_node* most_proving = root->selectMostProvingNode();
         pn_search_second(most_proving);
-        most_proving->delete_sub_tree();
+        for(int i = 0 ; i < most_proving->no_of_children ; i++){
+            delete_complete_tree(most_proving->children[i]);
+        }
         root->setProofandDisproofNumbers();
-        //cout<<most_proving->proof_number<<"\t"<<most_proving->disproof_number<<endl;
+        cout<<most_proving->proof_number<<"\t"<<most_proving->disproof_number<<endl;
         //cout<<root->proof_number<<"\t"<<root->disproof_number<<endl;
     }
-    
 }
 
 int main(){
