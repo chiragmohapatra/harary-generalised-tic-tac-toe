@@ -121,7 +121,7 @@ void pn_node::evaluate_node(){
 }
 
 void pn_node::setProofandDisproofNumbers(){
-    bool proof_inf = false , disproof_inf = false;
+    bool proof_inf = false , disproof_inf = false , proof_zero = false , disproof_zero = false;
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
@@ -131,10 +131,15 @@ void pn_node::setProofandDisproofNumbers(){
                     disproof_inf = true;
                 disproof_number+=(children[i]->disproof_number);
                 proof_number = min(proof_number , children[i]->proof_number);
+                if(children[i]->proof_number == 0)
+                    proof_zero = true;
             }
 
             if(disproof_inf)
                 disproof_number = inf;
+
+            if(proof_zero)
+                proof_number = 0;
         }
 
         else{ // AND node
@@ -145,10 +150,15 @@ void pn_node::setProofandDisproofNumbers(){
                     proof_inf = true;
                 proof_number+=(children[i]->proof_number);
                 disproof_number = min(disproof_number , children[i]->disproof_number);
+                if(children[i]->disproof_number == 0)
+                    disproof_zero = true;
             }
 
             if(proof_inf)
                 proof_number = inf;
+
+            if(disproof_zero)
+                disproof_number = 0;
 
         }
     }
@@ -165,9 +175,11 @@ void pn_node::setProofandDisproofNumbers(){
                 disproof_number = inf;
                 break;
 
-            case '2': //unknown        
+            case '2': //unknown
+
                 proof_number = 1;
                 disproof_number = 1;
+                
                 break;
         }
     }
@@ -207,10 +219,13 @@ pn_node* pn_node::selectMostProvingNode(){
         n = best;
     }
 
+
     return n;
 }
 
 void pn_node::ExpandNode(){
+    if(game->legal_moves == 0)
+        return;
     generate_children();
 
     for(int i = 0 ; i < children.size() ; i++){
@@ -257,14 +272,13 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         }
     }
 
+    root->setProofandDisproofNumbers();
+
     if(base_ancestors.size() == 1)
         return base_ancestors.front();
 
-    root->setProofandDisproofNumbers();
     return root;
 }
-
-
 
 void pn_search(pn_node* root){
 
@@ -276,6 +290,9 @@ void pn_search(pn_node* root){
         pn_node* most_proving = current->selectMostProvingNode();
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
+
+        cout<<root->proof_number<<"\t"<<root->disproof_number<<"\t"<<current->parents.size()<<endl;
+        //current->print_data();
     }
 }
 
