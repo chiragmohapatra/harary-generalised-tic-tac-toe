@@ -29,22 +29,24 @@ int min(int a , int b){
 class pn_node{
 
     // Todo replace board with a hash value and make a hash map
-    pn_node** children; // an array of pointers to the children
-    bool type; // true for OR node and false for AND node 
-    bool isInternal; // true for internal node and false otherwise
-    int no_of_children;
-    void generate_children(); // generates children of the node
     
     public:
         Game* game; // Todo just store moves instead of complte game in each node
         int proof_number , disproof_number , mpn , dmpn;
+        bool type; // true for OR node and false for AND node 
         pn_node* parent;
         char value;
+        pn_node** children; // an array of pointers to the children
+        bool isInternal; // true for internal node and false otherwise
+        int no_of_children;
+        void generate_children(); // generates children of the node
         
         pn_node(char** board_status){
             game = new Game(board_status);
             no_of_children = game->legal_moves;
             value = '2';
+            // initialise pn , dn , mpn
+            // call evalute always here for each node
         }
 
         void set_parent(pn_node* par){
@@ -73,6 +75,7 @@ class pn_node{
 };
 
 void pn_node::delete_sub_tree(){
+    // find better way
     if(value == '1' || value == '0')
         return;
 
@@ -131,6 +134,7 @@ void pn_node::setProofandDisproofNumbers(){
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
+            mpn = inf; dmpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->disproof_number == inf)
@@ -143,8 +147,8 @@ void pn_node::setProofandDisproofNumbers(){
                     proof_zero = true;
             }
 
-            dmpn++;
-            mpn++;
+            if(mpn != inf)
+                mpn++;
 
             if(disproof_inf){
                 disproof_number = inf;
@@ -157,6 +161,7 @@ void pn_node::setProofandDisproofNumbers(){
 
         else{ // AND node
             disproof_number = inf; proof_number = 0;
+            dmpn = inf; mpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->proof_number == inf)
@@ -169,8 +174,8 @@ void pn_node::setProofandDisproofNumbers(){
                     disproof_zero = true;
             }
 
-            dmpn++;
-            mpn++;
+            if(dmpn != inf)
+                dmpn++;
 
             if(proof_inf){
                 proof_number = inf;
@@ -183,6 +188,7 @@ void pn_node::setProofandDisproofNumbers(){
         }
     }
 
+    // make separate function for this
     else{
         switch(value){
             case '0': // disproven
@@ -338,16 +344,16 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         if(delete_sub_trees){
             if(n->proof_number == 0){
                 n->delete_sub_tree();
-                n->value = '1';
+                /*n->value = '1';
                 n->proof_number = 0;
-                n->disproof_number = inf;
+                n->disproof_number = inf;*/
             }
 
             else if(n->disproof_number == 0){
                 n->delete_sub_tree();
-                n->value = '0';
+                /*n->value = '0';
                 n->proof_number = inf;
-                n->disproof_number = 0;
+                n->disproof_number = 0;*/
             }
         }
 
@@ -358,11 +364,44 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
     return root;
 }
 
+void store_proof(pn_node* root){
+    fstream outfile4;
+    outfile4.open("./output/proof.txt",ios::out);
+
+    queue<pn_node*> q;
+    q.push(root);
+
+    while(!q.empty()){
+        pn_node* n = q.front();
+        q.pop();
+        outfile4<<n->game->print_as_string()<<endl;
+        if(n->isInternal){
+            if(n->type){
+                for(int i = 0 ; i < n->no_of_children ; i++){
+                    if(n->children[i]->disproof_number == inf){
+                        q.push(n->children[i]);
+                        break;
+                    }
+                }
+            }
+
+            else{
+                for(int i = 0 ; i < n->no_of_children ; i++){
+                    q.push(n->children[i]);
+                }
+
+            }
+        }
+    }
+
+}
+
 void pn_search(pn_node* root){
     root->evaluate_node();
     root->setProofandDisproofNumbers();
     pn_node* current = root;
-    fstream outfile4;
+    int ctr = 0;
+    
     //outfile4.open("./output/proof.txt",ios::out);
 
     while(root->proof_number != 0 && root->disproof_number != 0){
@@ -370,8 +409,12 @@ void pn_search(pn_node* root){
         //outfile4<<most_proving->game->print_as_string()<<endl;
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
-        //cout<<root->proof_number<<" "<<root->disproof_number<<endl;
+        /*if(ctr % 1000 == 0)
+            cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
+        ctr++;*/
     }
+
+    store_proof(root);
 }
 
 int main(){
@@ -404,7 +447,7 @@ int main(){
                 auto duration = duration_cast<microseconds>(stop - start);
                 outfile2<<duration.count()<<endl;
 
-                outfile3<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
+                cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
         
                 for(int i = 0 ; i < M ; i++)
                     delete [] board[i];
