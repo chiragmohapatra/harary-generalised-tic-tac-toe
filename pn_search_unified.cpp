@@ -134,7 +134,7 @@ void pn_node::setProofandDisproofNumbers(){
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
-            mpn = inf; dmpn = 1;
+            mpn = inf; dmpn = 0;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->disproof_number == inf)
@@ -150,6 +150,8 @@ void pn_node::setProofandDisproofNumbers(){
             if(mpn != inf)
                 mpn++;
 
+            dmpn++;
+
             if(disproof_inf){
                 disproof_number = inf;
                 dmpn = inf;
@@ -161,7 +163,7 @@ void pn_node::setProofandDisproofNumbers(){
 
         else{ // AND node
             disproof_number = inf; proof_number = 0;
-            dmpn = inf; mpn = 1;
+            dmpn = inf; mpn = 0;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->proof_number == inf)
@@ -176,6 +178,8 @@ void pn_node::setProofandDisproofNumbers(){
 
             if(dmpn != inf)
                 dmpn++;
+
+            mpn++;
 
             if(proof_inf){
                 proof_number = inf;
@@ -377,6 +381,7 @@ void store_proof(pn_node* root){
         outfile4<<n->game->print_as_string()<<endl;
         if(n->isInternal){
             if(n->type){
+                // just store the child with the smallest mpn
                 for(int i = 0 ; i < n->no_of_children ; i++){
                     if(n->children[i]->disproof_number == inf){
                         q.push(n->children[i]);
@@ -414,7 +419,7 @@ void pn_search(pn_node* root){
         ctr++;*/
     }
 
-    store_proof(root);
+    //store_proof(root);
 }
 
 int main(){
@@ -438,6 +443,8 @@ int main(){
                 auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
                 auto stop = high_resolution_clock::now();
+
+                store_proof(root_mobile);
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";
