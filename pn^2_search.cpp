@@ -30,13 +30,12 @@ int min(int a , int b){
 class pn_node{
 
     // Todo replace board with a hash value and make a hash map
-
-    Game* game; // Todo just store moves instead of complte game in each node
-    bool type; // true for OR node and false for AND node 
-    void generate_children(); // generates children of the node
     
     public:
 
+        Game* game; // Todo just store moves instead of complte game in each node
+        bool type; // true for OR node and false for AND node 
+        void generate_children(); // generates children of the node
         int proof_number , disproof_number;
         pn_node* parent;
         char value;
@@ -279,7 +278,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         if(n->proof_number == old_proof && n->disproof_number == old_disproof)
             return n; // if unchanged , then return
 
-        else if(n->proof_number == 0){
+        /*else if(n->proof_number == 0){
             n->delete_sub_tree();
             n->value = '1';
             n->proof_number = 0;
@@ -291,7 +290,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
             n->value = '0';
             n->proof_number = inf;
             n->disproof_number = 0;
-        }
+        }*/
 
         n = n->parent;
     }
@@ -308,6 +307,39 @@ void delete_complete_tree(pn_node* root){
         delete_complete_tree(root->children[i]);
 
     delete root;
+}
+
+void store_proof(pn_node* root){
+    fstream outfile4;
+    outfile4.open("./output/proof.txt",ios::out);
+
+    queue<pn_node*> q;
+    q.push(root);
+
+    while(!q.empty()){
+        pn_node* n = q.front();
+        q.pop();
+        outfile4<<n->game->print_as_string()<<endl;
+        if(n->isInternal){
+            if(n->type){
+                // just store the child with the smallest mpn
+                for(int i = 0 ; i < n->no_of_children ; i++){
+                    if(n->children[i]->disproof_number == inf){
+                        q.push(n->children[i]);
+                        break;
+                    }
+                }
+            }
+
+            else{
+                for(int i = 0 ; i < n->no_of_children ; i++){
+                    q.push(n->children[i]);
+                }
+
+            }
+        }
+    }
+
 }
 
 void pn_search_second(pn_node* root){
@@ -335,11 +367,14 @@ void pn_search_first(pn_node* root){
     while(root->proof_number != 0 && root->disproof_number != 0){
         pn_node* most_proving = root->selectMostProvingNode();
         pn_search_second(most_proving);
+        root->setProofandDisproofNumbers();
+        if(root->proof_number == 0 || root->disproof_number == 0)
+            break;
         for(int i = 0 ; i < most_proving->no_of_children ; i++){
             delete_complete_tree(most_proving->children[i]);
         }
-        root->setProofandDisproofNumbers();
-        cout<<most_proving->proof_number<<"\t"<<most_proving->disproof_number<<endl;
+        
+        //cout<<most_proving->proof_number<<"\t"<<most_proving->disproof_number<<endl;
         //cout<<root->proof_number<<"\t"<<root->disproof_number<<endl;
     }
 }
@@ -366,6 +401,8 @@ int main(){
                 auto start = high_resolution_clock::now();
                 pn_search_first(root_mobile);
                 auto stop = high_resolution_clock::now();
+
+                store_proof(root_mobile);
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";
