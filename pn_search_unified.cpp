@@ -134,7 +134,7 @@ void pn_node::setProofandDisproofNumbers(){
     if(isInternal){
         if(type){ // OR node
             proof_number = inf; disproof_number = 0;
-            mpn = inf; dmpn = 0;
+            mpn = inf; dmpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->disproof_number == inf)
@@ -150,8 +150,6 @@ void pn_node::setProofandDisproofNumbers(){
             if(mpn != inf)
                 mpn++;
 
-            dmpn++;
-
             if(disproof_inf){
                 disproof_number = inf;
                 dmpn = inf;
@@ -163,7 +161,7 @@ void pn_node::setProofandDisproofNumbers(){
 
         else{ // AND node
             disproof_number = inf; proof_number = 0;
-            dmpn = inf; mpn = 0;
+            dmpn = inf; mpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->proof_number == inf)
@@ -179,7 +177,6 @@ void pn_node::setProofandDisproofNumbers(){
             if(dmpn != inf)
                 dmpn++;
 
-            mpn++;
 
             if(proof_inf){
                 proof_number = inf;
@@ -375,19 +372,34 @@ void store_proof(pn_node* root){
     queue<pn_node*> q;
     q.push(root);
 
+    set<string> node_set;
+
+    //outfile4<<root->game->print_as_string()<<endl;
+    node_set.insert(root->game->print_as_string());
+
     while(!q.empty()){
         pn_node* n = q.front();
         q.pop();
-        outfile4<<n->game->print_as_string()<<endl;
+
+        if(!n->type){
+            //outfile4<<n->game->print_as_string()<<endl;
+            node_set.insert(n->game->print_as_string());
+        }
+
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
+                int itemp = 0 , mpn_temp = inf;
                 for(int i = 0 ; i < n->no_of_children ; i++){
                     if(n->children[i]->disproof_number == inf){
-                        q.push(n->children[i]);
-                        break;
+                        if(n->children[i]->mpn < mpn_temp || mpn_temp == inf){
+                            mpn_temp = n->children[i]->mpn;
+                            itemp = i;
+                        }
                     }
                 }
+
+                q.push(n->children[itemp]);
             }
 
             else{
@@ -398,6 +410,12 @@ void store_proof(pn_node* root){
             }
         }
     }
+
+    set<string>::iterator it;
+
+    for(it = node_set.begin() ; it != node_set.end() ; it++){
+        outfile4<<*it<<endl;
+    } 
 
 }
 
