@@ -1,5 +1,9 @@
 #include <bits/stdc++.h>
 #include "../include/generalised_tic_tac_toe.h"
+#include "../include/minimax.h"
+
+bool policy_applied = true;
+int minimaxdepth = 5;
 
 using namespace std;
 
@@ -22,11 +26,21 @@ bool check_proof(){
     // assert the node is a MAX node
     games.push(g);
 
-    while(!games.empty() && !games.front()->isTerminal()){
+    while(!games.empty()){
         Game* g1 = games.front();
+        games.pop();
+
+        int score = g1->evaluate();
+
+        if(score == -10){
+            g1->print_board();
+            return false;
+        }
+
+        else if(score == 10)
+            continue;
 
         vector<string> temp = g1->generate_children();
-        games.pop();
 
         if(g1->isPlayer){
             bool found = false;
@@ -45,7 +59,17 @@ bool check_proof(){
 
             if(!found){
                 //g1->print_board();
-                return false;
+                if(policy_applied){
+                    Move policy_move = findBestMove(g1 , minimaxdepth);
+                    g1->make_move(true , policy_move.row , policy_move.col);
+                    games.push(new Game(g1->board));
+                    g1->undo_move(policy_move.row , policy_move.col);
+                }
+
+                else{
+                    g1->print_board();
+                    return false;
+                }
             }
 
             else
@@ -53,13 +77,8 @@ bool check_proof(){
         }
 
         else{
-            vector<string>::iterator it;
-
             for(int i = 0 ; i < temp.size() ; i++){
-                it = find(nodes.begin() , nodes.end() , temp[i]);
-
                 games.push(new Game(make_board_from_file(temp[i])));
-                
             }
         }
     }
