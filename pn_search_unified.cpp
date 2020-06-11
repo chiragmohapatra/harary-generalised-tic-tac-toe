@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include "../include/generalised_tic_tac_toe.h"
+#include "../include/minimax.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -9,6 +10,8 @@ using namespace std::chrono;
 bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
 bool minimal_proof = false;
+bool policy_applied = true;
+int depth_minimax = 5;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
@@ -389,17 +392,41 @@ void store_proof(pn_node* root){
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
-                int itemp = 0 , mpn_temp = inf;
-                for(int i = 0 ; i < n->no_of_children ; i++){
-                    if(n->children[i]->disproof_number == inf){
-                        if(n->children[i]->mpn < mpn_temp || mpn_temp == inf){
-                            mpn_temp = n->children[i]->mpn;
-                            itemp = i;
+                if(!policy_applied){
+                    int itemp = 0 , mpn_temp = inf;
+                    for(int i = 0 ; i < n->no_of_children ; i++){
+                        if(n->children[i]->disproof_number == inf){
+                            if(n->children[i]->mpn < mpn_temp || mpn_temp == inf){
+                                mpn_temp = n->children[i]->mpn;
+                                itemp = i;
+                            }
+                        }
+                    }
+
+                    q.push(n->children[itemp]);
+                }
+
+                else{
+                    Move optimal_move = findBestMove(n->game , depth_minimax);
+                    n->game->make_move(true , optimal_move.row , optimal_move.col);
+                    string temp_board = n->game->print_as_string();
+                    for(int i = 0 ; i < n->no_of_children ; i++){
+                        if(n->children[i]->game->print_as_string() == temp_board){
+                            if(n->children[i]->disproof_number != inf){
+                                int itemp = 0 , mpn_temp = inf;
+                                for(int j = 0 ; j < n->no_of_children ; j++){
+                                    if(n->children[j]->disproof_number == inf){
+                                        if(n->children[j]->mpn < mpn_temp || mpn_temp == inf){
+                                            mpn_temp = n->children[j]->mpn;
+                                            itemp = j;
+                                        }
+                                    }
+                                }
+                                q.push(n->children[itemp]);
+                            }
                         }
                     }
                 }
-
-                q.push(n->children[itemp]);
             }
 
             else{
