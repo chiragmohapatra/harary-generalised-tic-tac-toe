@@ -6,12 +6,7 @@ using namespace std::chrono;
 
 #define inf -1
 
-bool isMobile = true; // determines whether pn_search is mobile or not
-
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
-
-int ctr_mobile = 0;
-int ctr_immobile = 0;
 
 int min(int a , int b){
     if(a == inf)
@@ -184,24 +179,9 @@ void pn_node::setProofandDisproofNumbers(){
                 break;
 
             case '2': //unknown
-                if(!isMobile){
-                    proof_number = 1;
-                    disproof_number = 1;
-                }
-
-                else{
-                    proof_number = 1;
-                    disproof_number = 1;
-                    /*if(type){
-                        proof_number = 1;
-                        disproof_number = game->legal_moves;
-                    }
-
-                    else{
-                        proof_number = game->legal_moves;
-                        disproof_number = 1;
-                    }*/
-                }
+                proof_number = 1;
+                disproof_number = 1;
+                
                 
                 break;
         }
@@ -316,10 +296,20 @@ void store_proof(pn_node* root){
     queue<pn_node*> q;
     q.push(root);
 
+    set<string> node_set;
+
+    //outfile4<<root->game->print_as_string()<<endl;
+    node_set.insert(root->game->print_as_string());
+
     while(!q.empty()){
         pn_node* n = q.front();
         q.pop();
-        outfile4<<n->game->print_as_string()<<endl;
+        
+        if(!n->type){
+            //outfile4<<n->game->print_as_string()<<endl;
+            node_set.insert(n->game->print_as_string());
+        }
+
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
@@ -339,6 +329,12 @@ void store_proof(pn_node* root){
             }
         }
     }
+
+    set<string>::iterator it;
+
+    for(it = node_set.begin() ; it != node_set.end() ; it++){
+        outfile4<<*it<<endl;
+    } 
 
 }
 
@@ -393,7 +389,6 @@ int main(){
 
         while(getline(newfile , temp)){
             if(temp.length() == M*N){
-                isMobile = false;
                 char** board = make_board_from_file(temp);
                 pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
@@ -411,11 +406,6 @@ int main(){
 
                 auto duration = duration_cast<microseconds>(stop - start);
                 outfile2<<duration.count()<<endl;
-                
-                outfile3<<ctr_mobile<<endl;
-
-                ctr_mobile = 0;
-                ctr_immobile = 0;
 
                 for(int i = 0 ; i < M ; i++)
                     delete [] board[i];
