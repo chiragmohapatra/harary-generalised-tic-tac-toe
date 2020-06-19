@@ -3,9 +3,10 @@
 #include "../include/minimax.h"
 
 bool policy_applied = true;
-int minimaxdepth = 5;
+int minimaxdepth = 2;
 
 using namespace std;
+using namespace std::chrono;
 
 /* given a text file containing the positions involved in proof line by line , check whether the proof is correct */
 
@@ -87,7 +88,15 @@ bool check_proof(){
 }
 
 int main(){
+    fstream outfile1;
+    outfile1.open("./output/output.txt",ios::out);
+
+    auto start = high_resolution_clock::now();
     bool check = check_proof();
+    auto stop = high_resolution_clock::now();
+
+    auto duration = duration_cast<microseconds>(stop - start);
+    outfile1<<duration.count()<<endl;
 
     if(check)
         cout<<"Correct proof\n";

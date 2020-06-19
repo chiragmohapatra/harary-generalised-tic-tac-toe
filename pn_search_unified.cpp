@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe.h"
-#include "../include/minimax.h"
+#include "generalised_tic_tac_toe.h"
+#include "minimax.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -11,7 +11,9 @@ bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
 bool minimal_proof = false;
 bool policy_applied = true;
-int depth_minimax = 5;
+int depth_minimax = 4;
+
+int ctr_nodes = 0;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
@@ -48,8 +50,32 @@ class pn_node{
             game = new Game(board_status);
             no_of_children = game->legal_moves;
             value = '2';
+            ctr_nodes++;
             // initialise pn , dn , mpn
             // call evalute always here for each node
+            if(!isMobile){
+                    proof_number = 1;
+                    disproof_number = 1;
+                    mpn = 1;
+                    dmpn = 1;
+                }
+
+                else{
+                    if(type){
+                        proof_number = 1;
+                        mpn = 1;
+                        disproof_number = game->legal_moves;
+                        dmpn = game->legal_moves;
+                    }
+
+                    else{
+                        proof_number = game->legal_moves;
+                        mpn = game->legal_moves;
+                        disproof_number = 1;
+                        dmpn = 1;
+                    }
+
+                }
         }
 
         void set_parent(pn_node* par){
@@ -62,6 +88,7 @@ class pn_node{
         }
 
         ~pn_node(){
+            ctr_nodes--;
             delete game;
         }
 
@@ -389,6 +416,8 @@ void store_proof(pn_node* root){
             node_set.insert(n->game->print_as_string());
         }
 
+        //node_set.insert(n->game->print_as_string());
+
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
@@ -443,7 +472,6 @@ void store_proof(pn_node* root){
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
     } 
-
 }
 
 void pn_search(pn_node* root){
@@ -459,9 +487,12 @@ void pn_search(pn_node* root){
         //outfile4<<most_proving->game->print_as_string()<<endl;
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
-        /*if(ctr % 1000 == 0)
+        /*if(ctr % 1000 == 0){
             cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
+            //current->print_data();
+        }
         ctr++;*/
+        
     }
 
     //store_proof(root);
@@ -485,11 +516,13 @@ int main(){
                 pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
                 
-                auto start = high_resolution_clock::now();
+                //auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
-                auto stop = high_resolution_clock::now();
+                //auto stop = high_resolution_clock::now();
 
+                auto start = high_resolution_clock::now();
                 store_proof(root_mobile);
+                auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";
@@ -498,6 +531,8 @@ int main(){
 
                 auto duration = duration_cast<microseconds>(stop - start);
                 outfile2<<duration.count()<<endl;
+
+                outfile3<<ctr_nodes<<endl;
 
                 cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
         

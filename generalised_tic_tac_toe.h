@@ -37,6 +37,7 @@ class Game{
             delete [] board;
         }
 
+        bool isPlayer;
         bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
         bool isTerminal(); //returns true for a terminal position(player 1 win / player 1 lose / draw)
         int evaluate(); // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate
@@ -44,6 +45,8 @@ class Game{
         void make_move(bool,int,int);
         void undo_move(int,int); // undo the move at (int,int)
         void print_board();
+        string print_as_string();
+        vector<string> generate_children();
 };
 
 char** make_board_from_file(string str);// input a string of form 000011201.. till NxN where 0 represents _ , 1 respresents player and 2 represents opponent and it is row-wise

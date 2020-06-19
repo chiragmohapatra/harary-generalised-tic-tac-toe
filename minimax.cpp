@@ -15,7 +15,7 @@ struct Move{ // a move is charactersied by the row and the column
 };
 
 // return maximum of a and b
-int max(int a , int b){
+/*int max(int a , int b){
     if(a >= b)
         return a;
 
@@ -29,10 +29,10 @@ int min(int a , int b){
 
     else
         return b;
-}
+}*/
 
 // returns the value of the board after considering all possibilities
-int minimax(Game* game, int depth, bool isMax , int alpha , int beta){ 
+int minimax(Game* game, int depth, bool isMax , int alpha , int beta , int maxdepth){ 
     int score = game->evaluate(); 
     ctr++;
   
@@ -46,7 +46,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta){
   
     // If there are no more moves and no winner then 
     // it is a tie 
-    if (game->isMovesLeft()==false) 
+    if (game->isMovesLeft()==false || depth >= maxdepth) 
         return 0; 
   
     // If this maximizer's move 
@@ -60,7 +60,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta){
                     // Make the move 
                     game->make_move(true , i , j); 
 
-                    int val = minimax(game, depth+1, !isMax , alpha , beta);
+                    int val = minimax(game, depth+1, !isMax , alpha , beta , maxdepth);
   
                     best = max(best, val);
                     alpha = max(alpha , best);
@@ -90,7 +90,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta){
                     // Make the move 
                     game->make_move(false , i , j); 
   
-                    int val = minimax(game, depth+1, !isMax , alpha , beta);
+                    int val = minimax(game, depth+1, !isMax , alpha , beta , maxdepth);
   
                     best = min(best, val);
                     beta = min(beta , best); 
@@ -110,7 +110,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta){
 }
 
 // returns the best move for the player
-Move findBestMove(Game* game){
+Move findBestMove(Game* game , int maxdepth){
     int bestVal = -1000; 
     Move bestMove; 
     bestMove.row = -1; 
@@ -131,7 +131,7 @@ Move findBestMove(Game* game){
   
                 // compute evaluation function for this 
                 // move. 
-                int moveVal = minimax(game, 0, false , neginf , inf); //iniialise alpha as -inf and beta as +inf
+                int moveVal = minimax(game, 0, false , neginf , inf , maxdepth); //iniialise alpha as -inf and beta as +inf
   
                 // Undo the move 
                 game->undo_move(i,j);
@@ -152,7 +152,7 @@ Move findBestMove(Game* game){
     return bestMove; 
 } 
 
-int main(){
+/*int main(){
     fstream newfile , outfile1 , outfile2 , outfile3;
 
     newfile.open("./src/input.txt",ios::in);
@@ -236,7 +236,7 @@ int main(){
     cout<<"Col: "<<bestMove.col<<endl;*/
 
     
-
+/*
     return 0;
-}
+}*/
 

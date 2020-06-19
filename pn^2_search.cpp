@@ -1,12 +1,17 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe.h"
+#include "generalised_tic_tac_toe.h"
 
 using namespace std;
 using namespace std::chrono;
 
 #define inf -1
 
+bool isMobile = false;
+bool delete_sub_trees = false;
+
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
+
+int ctr_nodes = 0;
 
 int min(int a , int b){
     if(a == inf)
@@ -42,6 +47,25 @@ class pn_node{
             game = new Game(board_status);
             no_of_children = game->legal_moves;
             value = '2';
+            ctr_nodes++;
+
+            if(!isMobile){
+                    proof_number = 1;
+                    disproof_number = 1;
+                }
+
+                else{
+                    if(type){
+                        proof_number = 1;
+                        disproof_number = game->legal_moves;
+                    }
+
+                    else{
+                        proof_number = game->legal_moves;
+                        disproof_number = 1;
+                    }
+
+                }
         }
 
         void set_parent(pn_node* par){
@@ -54,6 +78,7 @@ class pn_node{
         }
 
         ~pn_node(){
+            ctr_nodes--;
             delete game;
         }
 
@@ -179,8 +204,22 @@ void pn_node::setProofandDisproofNumbers(){
                 break;
 
             case '2': //unknown
-                proof_number = 1;
-                disproof_number = 1;
+                if(!isMobile){
+                    proof_number = 1;
+                    disproof_number = 1;
+                }
+
+                else{
+                    if(type){
+                        proof_number = 1;
+                        disproof_number = game->legal_moves;
+                    }
+
+                    else{
+                        proof_number = game->legal_moves;
+                        disproof_number = 1;
+                    }
+                }
                 
                 
                 break;
@@ -258,19 +297,21 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         if(n->proof_number == old_proof && n->disproof_number == old_disproof)
             return n; // if unchanged , then return
 
-        /*else if(n->proof_number == 0){
-            n->delete_sub_tree();
-            n->value = '1';
-            n->proof_number = 0;
-            n->disproof_number = inf;
-        }
+        if(delete_sub_trees){
+            if(n->proof_number == 0){
+                n->delete_sub_tree();
+                n->value = '1';
+                n->proof_number = 0;
+                n->disproof_number = inf;
+            }
 
-        else if(n->disproof_number == 0){
-            n->delete_sub_tree();
-            n->value = '0';
-            n->proof_number = inf;
-            n->disproof_number = 0;
-        }*/
+            else if(n->disproof_number == 0){
+                n->delete_sub_tree();
+                n->value = '0';
+                n->proof_number = inf;
+                n->disproof_number = 0;
+            }
+        }
 
         n = n->parent;
     }
@@ -305,10 +346,12 @@ void store_proof(pn_node* root){
         pn_node* n = q.front();
         q.pop();
         
-        if(!n->type){
+        /*if(!n->type){
             //outfile4<<n->game->print_as_string()<<endl;
             node_set.insert(n->game->print_as_string());
-        }
+        }*/
+
+        node_set.insert(n->game->print_as_string());
 
         if(n->isInternal){
             if(n->type){
@@ -338,13 +381,13 @@ void store_proof(pn_node* root){
 
 }
 
-void pn_search_second(pn_node* root){
+void pn_search_second(pn_node* root , int itr){
     root->evaluate_node();
     root->setProofandDisproofNumbers();
     pn_node* current = root;
     int ctr = 0;
 
-    while(root->proof_number != 0 && root->disproof_number != 0 && ctr < 100000){
+    while(root->proof_number != 0 && root->disproof_number != 0 && ctr < itr/10){
         pn_node* most_proving = current->selectMostProvingNode();
         most_proving->ExpandNode();
         //most_proving->print_data();
@@ -360,18 +403,24 @@ void pn_search_first(pn_node* root){
     root->ExpandNode();
     root->setProofandDisproofNumbers();
 
+    int ctr = 0;
+
     while(root->proof_number != 0 && root->disproof_number != 0){
+        ctr++;
         pn_node* most_proving = root->selectMostProvingNode();
-        pn_search_second(most_proving);
+        pn_search_second(most_proving , ctr);
         root->setProofandDisproofNumbers();
         if(root->proof_number == 0 || root->disproof_number == 0)
             break;
         for(int i = 0 ; i < most_proving->no_of_children ; i++){
             delete_complete_tree(most_proving->children[i]);
         }
+
+        most_proving->isInternal = false;
         
         //cout<<most_proving->proof_number<<"\t"<<most_proving->disproof_number<<endl;
-        //cout<<root->proof_number<<"\t"<<root->disproof_number<<endl;
+        if(ctr % 1000 == 0)
+            cout<<root->proof_number<<"\t"<<root->disproof_number<<endl;
     }
 }
 
@@ -397,7 +446,7 @@ int main(){
                 pn_search_first(root_mobile);
                 auto stop = high_resolution_clock::now();
 
-                store_proof(root_mobile);
+                //store_proof(root_mobile);
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";
@@ -406,6 +455,8 @@ int main(){
 
                 auto duration = duration_cast<microseconds>(stop - start);
                 outfile2<<duration.count()<<endl;
+
+                outfile3<<ctr_nodes<<endl;
 
                 for(int i = 0 ; i < M ; i++)
                     delete [] board[i];
