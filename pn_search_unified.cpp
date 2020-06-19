@@ -502,7 +502,7 @@ int main(){
 
     fstream newfile , outfile1 , outfile2 , outfile3;
 
-    newfile.open("./src/input.txt",ios::in);
+    newfile.open("input.txt",ios::in);
     outfile1.open("./output/output.txt",ios::out);
     outfile2.open("./output/times_pn_search(in microseconds).txt",ios::out);
     outfile3.open("./output/nodes_pn_search.txt",ios::out);

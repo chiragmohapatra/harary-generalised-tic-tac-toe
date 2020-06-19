@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe.h" // can be changed for different games(board games)
+#include "generalised_tic_tac_toe.h" // can be changed for different games(board games)
 
 using namespace std;
 using namespace std::chrono;
