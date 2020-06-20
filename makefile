@@ -1,24 +1,27 @@
-CXXFLAGS := #-pedantic-errors -Wall -Wextra -Werror
-OBJ_DIR := ./obj
-LIB_DIR := ./lib
 BIN_DIR := ./bin
+INC_DIR := ./src/includes
+LIB_DIR := ./lib
+OBJ_DIR := ./obj
+SRC_DIR := ./src
+VPATH := $(SRC_DIR)
+CXXFLAGS := -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
 
-SRC := generalised_tic_tac_toe.cpp pn_search_unified.cpp minimax.cpp
+SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/monte_carlo_simulator.cpp
 
-OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+OBJECTS := $(subst $(SRC_DIR),$(OBJ_DIR),$(SRC:%.cpp=%.o))
 LIBS := $(LIB_DIR)/generalised_tic_tac_toe.a $(LIB_DIR)/minimax.a
-HEADERS := generalised_tic_tac_toe.h minimax.h
+HEADERS := $(INC_DIR)/generalised_tic_tac_toe.h $(INC_DIR)/minimax.h
 EXEC := $(BIN_DIR)/exec
 
 .PHONY: all clean execute
 all: $(EXEC)
 #	g++ pn_search_unified.o -o exec -L. -lgeneralised_tic_tac_toe -lminimax
 
-$(BIN_DIR)/exec: $(OBJECTS)
+$(BIN_DIR)/exec: $(OBJECTS) $(LIBS)
 	@mkdir -p $(BIN_DIR)
 	g++ $(CXXFLAGS) -o $(BIN_DIR)/exec $^
 
-$(OBJ_DIR)/%.o: %.cpp $(HEADERS)
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
 	@mkdir -p $(OBJ_DIR)
 	g++ $(CXXFLAGS) -c $< -o $@
 

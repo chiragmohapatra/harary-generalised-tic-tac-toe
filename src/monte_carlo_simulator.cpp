@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe.h"
+#include "generalised_tic_tac_toe.h"
+#include "monte_carlo_simulator.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -30,7 +31,7 @@ void monte_carlo_simulator(int n){
     }
 }
 
-int main(){
+int monte_carlo_simulator_main(){
     int n = 1000000;
 
     auto start = high_resolution_clock::now();

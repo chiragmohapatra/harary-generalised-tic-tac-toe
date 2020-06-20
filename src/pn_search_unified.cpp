@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include "generalised_tic_tac_toe.h"
 #include "minimax.h"
+#include "pn_search_unified.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -498,7 +499,7 @@ void pn_search(pn_node* root){
     //store_proof(root);
 }
 
-int main(){
+int pn_search_unified_main(){
 
     fstream newfile , outfile1 , outfile2 , outfile3;
 
@@ -515,7 +516,7 @@ int main(){
                 char** board = make_board_from_file(temp);
                 pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
-                
+
                 //auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
                 //auto stop = high_resolution_clock::now();
@@ -535,7 +536,7 @@ int main(){
                 outfile3<<ctr_nodes<<endl;
 
                 cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
-        
+
                 for(int i = 0 ; i < M ; i++)
                     delete [] board[i];
 
@@ -550,6 +551,6 @@ int main(){
     outfile1.close();
     outfile2.close();
     outfile3.close();
-    
+
     return 0;
 }
