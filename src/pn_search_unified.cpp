@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include "generalised_tic_tac_toe.h"
+#include "generalised_tic_tac_toe_bitboard.h"
 #include "minimax.h"
 #include "pn_search_unified.h"
 
@@ -35,7 +36,7 @@ int min(int a , int b){
 class pn_node{
 
     // Todo replace board with a hash value and make a hash map
-    
+
     public:
         Game* game; // Todo just store moves instead of complte game in each node
         int proof_number , disproof_number , mpn , dmpn;
@@ -46,10 +47,11 @@ class pn_node{
         bool isInternal; // true for internal node and false otherwise
         int no_of_children;
         void generate_children(); // generates children of the node
-        
-        pn_node(char** board_status){
-            game = new Game(board_status);
-            no_of_children = game->legal_moves;
+
+        pn_node(Game * board){
+            game = board;
+            const int legals = game->legalMoves();
+            no_of_children = legals;
             value = '2';
             ctr_nodes++;
             // initialise pn , dn , mpn
@@ -61,17 +63,17 @@ class pn_node{
                     dmpn = 1;
                 }
 
-                else{
+            else{
                     if(type){
                         proof_number = 1;
                         mpn = 1;
-                        disproof_number = game->legal_moves;
-                        dmpn = game->legal_moves;
+                        disproof_number = legals;
+                        dmpn = legals;
                     }
 
                     else{
-                        proof_number = game->legal_moves;
-                        mpn = game->legal_moves;
+                        proof_number = legals;
+                        mpn = legals;
                         disproof_number = 1;
                         dmpn = 1;
                     }
@@ -83,7 +85,7 @@ class pn_node{
             parent = par;
             if(par == NULL)
                 type = true;
-            else 
+            else
                 type = !(par->type);
             isInternal = false;
         }
@@ -125,17 +127,19 @@ void pn_node::generate_children(){
 
     int k = 0;
     children = new pn_node*[no_of_children];
-    
+
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(game->isValidMove(i,j)){
                 // make move
-                game->make_move(type , i , j);
+                Game* copygame = game->clone();
+                copygame->make_move(type , i , j);
 
-                pn_node* child = new pn_node(game->board);
-                
+                pn_node* child = new pn_node(copygame);
+                //pn_node* child = new pn_node(game->board);
+
                 //undo the move
-                game->undo_move(i,j);
+                //game->undo_move(i,j);
 
                 child->set_parent(this);
                 children[k++] = child;
@@ -250,19 +254,19 @@ void pn_node::setProofandDisproofNumbers(){
                     if(type){
                         proof_number = 1;
                         mpn = 1;
-                        disproof_number = game->legal_moves;
-                        dmpn = game->legal_moves;
+                        disproof_number = game->legalMoves();
+                        dmpn = game->legalMoves();
                     }
 
                     else{
-                        proof_number = game->legal_moves;
-                        mpn = game->legal_moves;
+                        proof_number = game->legalMoves();
+                        mpn = game->legalMoves();
                         disproof_number = 1;
                         dmpn = 1;
                     }
 
                 }
-                
+
                 break;
         }
     }
@@ -296,7 +300,7 @@ pn_node* pn_node::selectMostProvingNode(){
                         best = n->children[i];
                         value = n->children[i]->disproof_number;
                     }
-                
+
                 }
             }
 
@@ -328,7 +332,7 @@ pn_node* pn_node::selectMostProvingNode(){
                         best = n->children[i];
                         value = n->children[i]->dmpn;
                     }
-                
+
                 }
             }
 
@@ -358,7 +362,6 @@ void pn_node::ExpandNode(){
             if(children[i]->disproof_number == 0)
                 break;
         }
-
     }
 
     isInternal = true;
@@ -472,7 +475,7 @@ void store_proof(pn_node* root){
 
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
-    } 
+    }
 }
 
 void pn_search(pn_node* root){
@@ -480,7 +483,7 @@ void pn_search(pn_node* root){
     root->setProofandDisproofNumbers();
     pn_node* current = root;
     int ctr = 0;
-    
+
     //outfile4.open("./output/proof.txt",ios::out);
 
     while(root->proof_number != 0 && root->disproof_number != 0){
@@ -488,12 +491,12 @@ void pn_search(pn_node* root){
         //outfile4<<most_proving->game->print_as_string()<<endl;
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
-        /*if(ctr % 1000 == 0){
-            cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
+        if(ctr % 1000 == 0){
+//            cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
             //current->print_data();
         }
-        ctr++;*/
-        
+        ctr++;
+
     }
 
     //store_proof(root);
@@ -513,8 +516,9 @@ int pn_search_unified_main(){
 
         while(getline(newfile , temp)){
             if(temp.length() == M*N){
-                char** board = make_board_from_file(temp);
-                pn_node* root_mobile = new pn_node(board);
+                Bitboard board(temp);
+                //CharSS board(temp);
+                pn_node* root_mobile = new pn_node(&board);
                 root_mobile->set_parent(NULL);
 
                 //auto start = high_resolution_clock::now();
@@ -537,15 +541,10 @@ int pn_search_unified_main(){
 
                 cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
 
-                for(int i = 0 ; i < M ; i++)
-                    delete [] board[i];
-
-                delete [] board;
-                delete root_mobile;
+//                delete root_mobile;
             }
         }
     }
-
 
     newfile.close();
     outfile1.close();

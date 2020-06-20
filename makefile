@@ -6,7 +6,7 @@ SRC_DIR := ./src
 VPATH := $(SRC_DIR)
 CXXFLAGS := -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
 
-SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/monte_carlo_simulator.cpp
+SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/monte_carlo_simulator.cpp $(SRC_DIR)/generalised_tic_tac_toe_bitboard.cpp
 
 OBJECTS := $(subst $(SRC_DIR),$(OBJ_DIR),$(SRC:%.cpp=%.o))
 LIBS := $(LIB_DIR)/generalised_tic_tac_toe.a $(LIB_DIR)/minimax.a

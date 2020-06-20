@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include "generalised_tic_tac_toe.h"
 
 using namespace std;
 
@@ -10,58 +11,27 @@ using namespace std;
     Currently , evaluate function : gives +10 if player 1 wins and -10 in case of draw or player 1 lose . 
     The board is of size MxN i.e M rows and N columns*/
 
-#define M 4
-#define N 4
-#define player 'x'
-#define opponent 'o'
-
 int polyamino_type = 0; // 0 for Tippy , 1 for Box/Fatty and 2 for Tic
 
 unsigned long long int hash_func(char**);
 
-class Game{
-    public:
-        char** board;
-        int legal_moves;
-        unsigned long long int hash_value;
-        Game(){
-            board = new char*[M];
-            for(int i = 0 ; i < M ; i++)
-                board[i] = new char[N];
+CharSS::CharSS(){
+  board = new char*[M];
+  for(int i = 0 ; i < M ; i++)
+    board[i] = new char[N];
+  for(int i = 0 ; i < M ; i++){
+    for(int j = 0 ; j < N ; j++)
+      board[i][j] = '_';
+  }
 
-            for(int i = 0 ; i < M ; i++){
-                for(int j = 0 ; j < N ; j++)
-                    board[i][j] = '_';
-            }
+  legal_moves = M*N;
+  hash_value = 0;
+}
 
-            legal_moves = M*N;
-            hash_value = 0;
-            isPlayer = true;
-        }
 
-        Game(char** board_status); // set board to board_status
-        //Game(char** board_status , char*** ZobristTable); // for transposition table based searches
 
-        ~Game(){
-            for(int i = 0 ; i < M ; i++)
-                delete [] board[i];
-
-            delete [] board;
-        }
-
-        bool isPlayer;
-        bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
-        bool isTerminal(); //returns true for a terminal position(player 1 win / player 1 lose / draw)
-        int evaluate(); // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate
-        bool isValidMove(int,int); // returns true if move made is valid
-        void make_move(bool,int,int);
-        void undo_move(int,int); // undo the move at (int,int)
-        void print_board();
-        string print_as_string();
-        vector<string> generate_children();
-};
-
-Game::Game(char** board_status){
+// input a string of form 000011201.. till NxN where 0 represents _ , 1 respresents player and 2 represents opponent and it is row-wise
+CharSS::CharSS(string str){
     int ctr = 0 , ctrp = 0 , ctro = 0;
     board = new char*[M];
     for(int i = 0 ; i < M ; i++)
@@ -69,13 +39,17 @@ Game::Game(char** board_status){
 
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
-            board[i][j] = board_status[i][j];
-            if(board_status[i][j] == '_')
+            char c = str.at(M*i + j);
+            if(c == '0') {
+                board[i][j] = '_';
                 ctr++;
-            else if(board_status[i][j] == player)
+            } else if(c == '1') {
+                board[i][j] = player;
                 ctrp++;
-            else
+            } else {
+                board[i][j] = opponent;
                 ctro++;
+            }
         }
     }
 
@@ -84,20 +58,38 @@ Game::Game(char** board_status){
         isPlayer = true;
     else
         isPlayer = false;
-    hash_value = hash_func(board_status);
+    hash_value = hash_func(board);
 }
 
+CharSS::~CharSS(){
+  for(int i = 0 ; i < M ; i++)
+    delete [] board[i];
+  delete [] board;
+}
+
+CharSS* CharSS::clone() const {
+  return new CharSS(print_as_string());
+}
+
+
 //returns true if legal moves are left and false otherwise(completely filled board)
-bool Game::isMovesLeft(){
+bool CharSS::isMovesLeft(){
     if(legal_moves == 0)
         return false;
-
     else
         return true;
 }
 
+int CharSS::legalMoves(){
+    return legal_moves;
+}
+
+unsigned long long int CharSS::hashValue(){
+    return hash_value;
+}
+
 //returns true for a terminal position(player 1 win / player 1 lose / draw)
-bool Game::isTerminal(){
+bool CharSS::isTerminal(){
 
     int i , j;
 
@@ -179,7 +171,7 @@ bool Game::isTerminal(){
 
 
 // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate
-int Game::evaluate(){
+int CharSS::evaluate(){
     int i , j;
 
     switch(polyamino_type){
@@ -281,7 +273,7 @@ int Game::evaluate(){
     return 0;
 }
 
-bool Game::isValidMove(int row , int col){
+bool CharSS::isValidMove(int row , int col){
     if(row >= M || col >= N)
         return false;
 
@@ -292,7 +284,7 @@ bool Game::isValidMove(int row , int col){
         return true;
 }
 
-void Game::make_move(bool isPlayer , int row , int col){
+void CharSS::make_move(bool isPlayer , int row , int col){
     if(board[row][col] != '_')
         return;
 
@@ -312,7 +304,7 @@ void Game::make_move(bool isPlayer , int row , int col){
     isPlayer = !isPlayer;
 }
 
-void Game::undo_move(int row , int col){
+void CharSS::undo_move(int row , int col){
     if(board[row][col] == player)
         hash_value-=(pow(3,N*row + col));
     else
@@ -322,7 +314,7 @@ void Game::undo_move(int row , int col){
     legal_moves++;
 }
 
-void Game::print_board(){
+void CharSS::print_board(){
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++)
             cout<<board[i][j]<<" ";
@@ -331,7 +323,7 @@ void Game::print_board(){
     }
 }
 
-string Game::print_as_string(){
+string CharSS::print_as_string() const {
     string str;
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
@@ -347,7 +339,7 @@ string Game::print_as_string(){
     return str;
 }
 
-vector<string> Game::generate_children(){
+vector<string> CharSS::generate_children(){
     vector<string> children;
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
@@ -356,7 +348,7 @@ vector<string> Game::generate_children(){
                     board[i][j] = player;
                 else
                     board[i][j] = opponent;
-                
+
                 children.push_back(print_as_string());
                 board[i][j] = '_';
             }
@@ -364,34 +356,6 @@ vector<string> Game::generate_children(){
     }
 
     return children;
-}
-
-// input a string of form 000011201.. till NxN where 0 represents _ , 1 respresents player and 2 represents opponent and it is row-wise
-char** make_board_from_file(string str){
-    char** board = new char*[M];
-    char c;
-
-    for(int i = 0 ; i < M ; i++)
-        board[i] = new char[N];
-
-    for(int i = 0 ; i < M ; i++){
-        for(int j = 0 ; j < N ; j++){
-            c = str.at(M*i + j);
-
-            if(c == '0')
-                board[i][j] = '_';
-
-            else if(c == '1')
-                board[i][j] = player;
-
-            else
-                board[i][j] = opponent;
-            
-        }
-            
-    }
-
-    return board;
 }
 
 unsigned long long int hash_func(char** board){

@@ -1,10 +1,8 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe_bitboard.h"
+#include "generalised_tic_tac_toe_bitboard.h"
 
 using namespace std;
 using namespace std::chrono;
-
-vector<bitset<M*N>> polyaminos;
 
 // plays n games randomly
 void monte_carlo_simulator(int n){
@@ -14,7 +12,7 @@ void monte_carlo_simulator(int n){
         Game g;
         bool isPlayer = true;
 
-        while(!g.isTerminal(polyaminos)){
+        while(!g.isTerminal()){
 
             r = rand() % N;
             c = rand() % N;
@@ -45,7 +43,7 @@ int main(){
 
     vector<bitset<M*N>> user_polyaminos({b1 , b2 , b3 , b4});
 
-    construct_polyaminos(polyaminos , user_polyaminos);
+    construct_polyaminos(user_polyaminos);
 
     /*for(int i = 0 ; i < polyaminos.size() ; i++)
         cout<<polyaminos[i]<<endl;*/
@@ -54,8 +52,8 @@ int main(){
     monte_carlo_simulator(n);
     auto stop = high_resolution_clock::now();
 
-    auto duration = duration_cast<microseconds>(stop - start); 
-  
+    auto duration = duration_cast<microseconds>(stop - start);
+
     cout << "Time taken by function: "
          << duration.count() << " seconds" << endl;
 
