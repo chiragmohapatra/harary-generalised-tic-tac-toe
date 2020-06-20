@@ -14,6 +14,7 @@ int main(){
   pn_search_unified_main();
 
   CharSS game;
-  //Bitboard game;
   monte_carlo_simulator_main(game);
+  Bitboard game2;
+  monte_carlo_simulator_main(game2);
 }
