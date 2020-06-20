@@ -1,0 +1,5 @@
+*~
+bin/exec
+lib/*.a
+obj/*.o
+output/*

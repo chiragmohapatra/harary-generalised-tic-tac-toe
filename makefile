@@ -1,23 +1,33 @@
-objs = generalised_tic_tac_toe.o pn_search_unified.o minimax.o
-srcs = generalised_tic_tac_toe.cpp pn_search_unified.cpp minimax.cpp
-lib = libgeneralised_tic_tac_toe.a libminimax.a
+CXXFLAGS := #-pedantic-errors -Wall -Wextra -Werror
+OBJ_DIR := ./obj
+LIB_DIR := ./lib
+BIN_DIR := ./bin
 
-.PHONY: all $(objs) $(lib) clean $(srcs)
-all : $(objs) $(lib) $(srcs)
-	g++ pn_search_unified.o -o exec -L. -lgeneralised_tic_tac_toe -lminimax
+SRC := generalised_tic_tac_toe.cpp pn_search_unified.cpp minimax.cpp
 
-$(objs) : $(srcs)
-	g++ -c generalised_tic_tac_toe.cpp -o generalised_tic_tac_toe.o
-	g++ -c minimax.cpp -o minimax.o
-	g++ -c pn_search_unified.cpp -o pn_search_unified.o
+OBJECTS := $(SRC:%.cpp=$(OBJ_DIR)/%.o)
+LIBS := $(LIB_DIR)/generalised_tic_tac_toe.a $(LIB_DIR)/minimax.a
+HEADERS := generalised_tic_tac_toe.h minimax.h
+EXEC := $(BIN_DIR)/exec
 
+.PHONY: all clean execute
+all: $(EXEC)
+#	g++ pn_search_unified.o -o exec -L. -lgeneralised_tic_tac_toe -lminimax
 
-$(lib) : generalised_tic_tac_toe.o minimax.o
-	ar cr libgeneralised_tic_tac_toe.a generalised_tic_tac_toe.o
-	ar cr libminimax.a minimax.o
+$(BIN_DIR)/exec: $(OBJECTS)
+	@mkdir -p $(BIN_DIR)
+	g++ $(CXXFLAGS) -o $(BIN_DIR)/exec $^
 
-clean : 
-	rm *.o *.a exec
+$(OBJ_DIR)/%.o: %.cpp $(HEADERS)
+	@mkdir -p $(OBJ_DIR)
+	g++ $(CXXFLAGS) -c $< -o $@
+
+$(LIB_DIR)/%.a: $(OBJ_DIR)/%.o
+	@mkdir -p $(LIB_DIR)
+	ar cr $@ $<
+
+clean :
+	$(RM) $(OBJECTS) $(LIBS) $(BIN_DIR)/exec
 
 execute:
-	./exec
+	$(BIN_DIR)/exec

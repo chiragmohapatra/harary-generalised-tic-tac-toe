@@ -2,6 +2,9 @@
 
 #define GENERALISED_TIC_TAC_TOE_H
 
+#include <string>
+#include <vector>
+
 #define M 4
 #define N 4
 #define player 'x'
