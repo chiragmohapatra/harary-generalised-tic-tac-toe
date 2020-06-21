@@ -133,7 +133,7 @@ int Bitboard::evaluate(){
 }
 
 // returns true if move made is valid
-bool Bitboard::isValidMove(int row, int col){
+bool Bitboard::isValidMove(int row, int col) const {
     if(row >= M || col >= N)
         return false;
 

@@ -273,7 +273,7 @@ int CharSS::evaluate(){
     return 0;
 }
 
-bool CharSS::isValidMove(int row , int col){
+bool CharSS::isValidMove(int row , int col) const {
     if(row >= M || col >= N)
         return false;
 
