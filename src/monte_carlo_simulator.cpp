@@ -1,4 +1,5 @@
 #include <bits/stdc++.h>
+#include <algorithm>
 #include "generalised_tic_tac_toe.h"
 #include "generalised_tic_tac_toe_bitboard.h"
 #include "monte_carlo_simulator.h"
@@ -16,17 +17,40 @@ void monte_carlo_simulator(const Game & game, int n){
 
         while(!g->isTerminal()){
             r = rand() % N;
-            c = rand() % N;
+            c = rand() % M; // AS: Careful, this needs to be M to properly handle non-square boards.
 
             while(!g->isValidMove(r,c)){
                 r = rand() % N;
-                c = rand() % N;
+                c = rand() % M;
             }
             g->make_move(isPlayer , r , c);
             isPlayer = !isPlayer;
         }
         ctr++;
     }
+}
+
+void fast_monte_carlo_simulator(const Game & game, int n){
+  vector<int> moves;
+  for(int i = 0; i < M*N; i++)
+    if (game.isValidMove(i/M, i%M))
+      moves.push_back(i);
+
+  for(int ctr = 0; ctr < n; ctr++){
+    Game* g = game.clone();
+    int maxi = moves.size();
+    bool isPlayer = true;
+
+    while(!g->isTerminal()){
+      const int index = rand() % maxi;
+      const int move = moves[index];
+
+      g->make_move(isPlayer, move/M, move%M);
+      isPlayer = !isPlayer;
+      maxi--;
+      swap(moves[index], moves[maxi]);
+    }
+  }
 }
 
 void monte_carlo_verifier(int n){
@@ -76,7 +100,7 @@ int monte_carlo_simulator_main(const Game & game){
     int n = 1000000;
 
     auto start = high_resolution_clock::now();
-    monte_carlo_simulator(game, n);
+    fast_monte_carlo_simulator(game, n);
     auto stop = high_resolution_clock::now();
 
     auto duration = duration_cast<microseconds>(stop - start);
