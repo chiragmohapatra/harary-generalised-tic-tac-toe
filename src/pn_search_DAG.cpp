@@ -1,6 +1,8 @@
 #include <bits/stdc++.h>
 #include "generalised_tic_tac_toe.h"
+#include "generalised_tic_tac_toe_improved.h"
 #include "minimax.h"
+#include "pn_search_DAG.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -10,9 +12,14 @@ using namespace std::chrono;
 bool isMobile = false;
 bool minimal_proof = false;
 bool policy_applied = false;
+bool minimal_policy_search = false;
 int depth_minimax = 2;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
+
+Move policy(Game* game){
+    return findBestMove(game , depth_minimax);
+}
 
 int min(int a , int b){
     if(a == inf)
@@ -37,16 +44,18 @@ class pn_node{
     public:
 
         Game* game; // Todo just store moves instead of complte game in each node
-        vector<pn_node*> children; // an array of pointers to the children
+        pn_node** children; // an array of pointers to the children
         bool type; // true for OR node and false for AND node
         char value; 
         bool isInternal; // true for internal node and false otherwise
         void generate_children(); // generates children of the node
+        int no_of_children;
+        bool reco_by_policy;
 
         int proof_number , disproof_number , mpn , dmpn;
         vector<pn_node*> parents;
         
-        pn_node(char** board_status);
+        pn_node(Game* board);
 
         void set_parent(pn_node* par){
             
@@ -77,39 +86,85 @@ class pn_node{
 
 pn_node** transposition_table;
 
-pn_node::pn_node(char** board_status){
+pn_node::pn_node(Game* board){
+    game = board;
+    const int legals = game->legalMoves();
+    no_of_children = legals;
+    value = '2';
     ctr_nodes++;
-    game = new Game(board_status);
-    transposition_table[game->hash_value] = this;
+    // initialise pn , dn , mpn
+    // call evalute always here for each node
+    if(!isMobile){
+            proof_number = 1;
+            disproof_number = 1;
+            mpn = 1;
+            dmpn = 1;
+        }
+
+    else{
+            if(type){
+                proof_number = 1;
+                mpn = 1;
+                disproof_number = legals;
+                dmpn = legals;
+            }
+
+            else{
+                proof_number = legals;
+                mpn = legals;
+                disproof_number = 1;
+                dmpn = 1;
+            }
+
+        }
+    transposition_table[game->hashValue()] = this;
+    reco_by_policy = false;
 }
 
 void pn_node::generate_children(){
-    
+
+    if(no_of_children == 0)
+        return;
+
+    int k = 0;
+    children = new pn_node*[no_of_children];
+
+    Move opt_move;
+
+    if(minimal_policy_search){
+        opt_move = policy(game);
+    }
+
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(game->isValidMove(i,j)){
                 // make move
-                game->make_move(type , i , j);
+                Game* copygame = game->clone();
+                copygame->make_move(i , j);
 
-                if(transposition_table[game->hash_value] != NULL){
-                    children.push_back(transposition_table[game->hash_value]);
-                    transposition_table[game->hash_value]->set_parent(this);
-
-                    //undo the move
-                    game->undo_move(i,j);
+                if(transposition_table[copygame->hashValue()] != NULL){
+                    children[k++] = transposition_table[copygame->hashValue()];
+                    transposition_table[copygame->hashValue()]->set_parent(this);
                 }
 
                 else{
-                    pn_node* child = new pn_node(game->board);
-                    transposition_table[game->hash_value] = child;
-                
+                    pn_node* child = new pn_node(copygame);
+                    if(minimal_policy_search){
+                        if(i == opt_move.row && j == opt_move.col)
+                            child->reco_by_policy = true;
+                    }
+                    transposition_table[game->hashValue()] = child;
+                    //pn_node* child = new pn_node(game->board);
+
                     //undo the move
-                    game->undo_move(i,j);
+                    //game->undo_move(i,j);
 
                     child->set_parent(this);
-                    children.push_back(child);
+                    children[k++] = child;
+
                 }
 
+                
             }
         }
     }
@@ -135,7 +190,7 @@ void pn_node::setProofandDisproofNumbers(){
             proof_number = inf; disproof_number = 0;
             mpn = inf; dmpn = 1;
 
-            for(int i = 0 ; i < children.size() ; i++){
+            for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->disproof_number == inf)
                     disproof_inf = true;
                 disproof_number+=(children[i]->disproof_number);
@@ -162,7 +217,7 @@ void pn_node::setProofandDisproofNumbers(){
             disproof_number = inf; proof_number = 0;
             dmpn = inf; mpn = 1;
 
-            for(int i = 0 ; i < children.size() ; i++){
+            for(int i = 0 ; i < no_of_children ; i++){
                 if(children[i]->proof_number == inf)
                     proof_inf = true;
                 proof_number+=(children[i]->proof_number);
@@ -217,13 +272,13 @@ void pn_node::setProofandDisproofNumbers(){
                     if(type){
                         proof_number = 1;
                         mpn = 1;
-                        disproof_number = game->legal_moves;
-                        dmpn = game->legal_moves;
+                        disproof_number = game->legalMoves();
+                        dmpn = game->legalMoves();
                     }
 
                     else{
-                        proof_number = game->legal_moves;
-                        mpn = game->legal_moves;
+                        proof_number = game->legalMoves();
+                        mpn = game->legalMoves();
                         disproof_number = 1;
                         dmpn = 1;
                     }
@@ -233,6 +288,14 @@ void pn_node::setProofandDisproofNumbers(){
                 break;
         }
         
+    }
+
+    if(minimal_policy_search && reco_by_policy){
+        if(mpn != inf)
+            mpn--;
+
+        if(dmpn != inf)
+            dmpn--;
     }
 
 }
@@ -248,7 +311,7 @@ pn_node* pn_node::selectMostProvingNode(){
             if(n->type){ // OR node
                 value = n->children[0]->proof_number;
                 best = n->children[0];
-                for(int i = 1 ; i < n->children.size() ; i++){
+                for(int i = 1 ; i < n->no_of_children ; i++){
                     if((value > n->children[i]->proof_number || value == inf) && n->children[i]->proof_number != inf){ // select one with the minimum proof number
                         best = n->children[i];
                         value = n->children[i]->proof_number;
@@ -259,7 +322,7 @@ pn_node* pn_node::selectMostProvingNode(){
             else{ // AND node
                 value = n->children[0]->disproof_number;
                 best = n->children[0];
-                for(int i = 1 ; i < n->children.size() ; i++){
+                for(int i = 1 ; i < n->no_of_children ; i++){
                     if((value > n->children[i]->disproof_number || value == inf) && n->children[i]->disproof_number != inf){ // select one with the minimum disproof number
                         best = n->children[i];
                         value = n->children[i]->disproof_number;
@@ -280,7 +343,7 @@ pn_node* pn_node::selectMostProvingNode(){
             if(n->type){ // OR node
                 value = n->children[0]->mpn;
                 best = n->children[0];
-                for(int i = 1 ; i < n->children.size() ; i++){
+                for(int i = 1 ; i < n->no_of_children ; i++){
                     if((value > n->children[i]->mpn || value == inf) && n->children[i]->mpn != inf){ // select one with the minimum proof number
                         best = n->children[i];
                         value = n->children[i]->mpn;
@@ -291,7 +354,7 @@ pn_node* pn_node::selectMostProvingNode(){
             else{ // AND node
                 value = n->children[0]->dmpn;
                 best = n->children[0];
-                for(int i = 1 ; i < n->children.size() ; i++){
+                for(int i = 1 ; i < n->no_of_children ; i++){
                     if((value > n->children[i]->dmpn || value == inf) && n->children[i]->dmpn != inf){ // select one with the minimum disproof number
                         best = n->children[i];
                         value = n->children[i]->dmpn;
@@ -309,11 +372,11 @@ pn_node* pn_node::selectMostProvingNode(){
 }
 
 void pn_node::ExpandNode(){
-    if(game->legal_moves == 0)
+    if(game->legalMoves() == 0)
         return;
     generate_children();
 
-    for(int i = 0 ; i < children.size() ; i++){
+    for(int i = 0 ; i < no_of_children ; i++){
         children[i]->evaluate_node();
         children[i]->setProofandDisproofNumbers();
 
@@ -366,9 +429,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
 }
 
 void store_proof(pn_node* root){
-    fstream outfile4;
-    outfile4.open("./output/proof.txt",ios::out);
-
+    
     queue<pn_node*> q;
     q.push(root);
 
@@ -392,36 +453,28 @@ void store_proof(pn_node* root){
             if(n->type){
                 // just store the child with the smallest mpn
                 if(!policy_applied){
-                    int itemp = 0 , mpn_temp = inf;
-                    for(int i = 0 ; i < n->children.size() ; i++){
+                    for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->disproof_number == inf){
-                            if(n->children[i]->mpn < mpn_temp || mpn_temp == inf){
-                                mpn_temp = n->children[i]->mpn;
-                                itemp = i;
-                            }
+                            q.push(n->children[i]);
+                            break;
                         }
                     }
 
-                    q.push(n->children[itemp]);
                 }
 
                 else{
-                    Move optimal_move = findBestMove(n->game , depth_minimax);
-                    n->game->make_move(true , optimal_move.row , optimal_move.col);
+                    Move optimal_move = policy(n->game);
+                    n->game->make_move(optimal_move.row , optimal_move.col);
                     string temp_board = n->game->print_as_string();
-                    for(int i = 0 ; i < n->children.size() ; i++){
+                    for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->game->print_as_string() == temp_board){
                             if(n->children[i]->disproof_number != inf){
-                                int itemp = 0 , mpn_temp = inf;
-                                for(int j = 0 ; j < n->children.size() ; j++){
+                                for(int j = 0 ; j < n->no_of_children ; j++){
                                     if(n->children[j]->disproof_number == inf){
-                                        if(n->children[j]->mpn < mpn_temp || mpn_temp == inf){
-                                            mpn_temp = n->children[j]->mpn;
-                                            itemp = j;
-                                        }
+                                        q.push(n->children[j]);
+                                        break;
                                     }
                                 }
-                                q.push(n->children[itemp]);
                             }
                         }
                     }
@@ -429,7 +482,7 @@ void store_proof(pn_node* root){
             }
 
             else{
-                for(int i = 0 ; i < n->children.size() ; i++){
+                for(int i = 0 ; i < n->no_of_children ; i++){
                     q.push(n->children[i]);
                 }
 
@@ -439,10 +492,14 @@ void store_proof(pn_node* root){
 
     set<string>::iterator it;
 
+    fstream outfile4;
+    outfile4.open("./output/proof.txt",ios::out);
+
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
     } 
 
+    outfile4.close();
 }
 
 void pn_search(pn_node* root){
@@ -466,7 +523,7 @@ void pn_search(pn_node* root){
     }
 }
 
-int main(){
+int pn_search_DAG_main(){
 
     fstream newfile , outfile1 , outfile2 , outfile3;
 
@@ -483,8 +540,9 @@ int main(){
         while(getline(newfile , temp)){
             if(temp.length() == M*N){
                 transposition_table = new pn_node*[table_size];
-                char** board = make_board_from_file(temp);
-                pn_node* root_mobile = new pn_node(board);
+                //Bitboard board(temp);
+                CharSS board(temp);
+                pn_node* root_mobile = new pn_node(&board);
                 root_mobile->set_parent(NULL);
                 
                 //auto start = high_resolution_clock::now();
@@ -493,8 +551,12 @@ int main(){
 
                 cout<<root_mobile->mpn<<" "<<root_mobile->dmpn<<endl;
 
+                for(int i = 0 ; i < root_mobile->no_of_children ; i++){
+                    cout<<root_mobile->children[i]->proof_number<<" "<<root_mobile->children[i]->disproof_number<<" "<<root_mobile->children[i]->mpn<<" "<<root_mobile->children[i]->dmpn<<endl;
+                }
+
                 auto start = high_resolution_clock::now();
-                store_proof(root_mobile);
+                //store_proof(root_mobile);
                 auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0)
@@ -507,11 +569,8 @@ int main(){
                 outfile2<<duration.count()<<endl; 
                 outfile3<<ctr_nodes<<endl;
 
-                for(int i = 0 ; i < M ; i++)
-                    delete [] board[i];
-
-                delete [] board;
-                delete root_mobile;
+                
+                //delete root_mobile;
                 delete [] transposition_table;
             }
         }

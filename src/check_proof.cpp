@@ -1,14 +1,24 @@
 #include <bits/stdc++.h>
-#include "../include/generalised_tic_tac_toe.h"
-#include "../include/minimax.h"
+#include "../includes/generalised_tic_tac_toe.h"
+#include "../includes/minimax.h"
+#include "../includes/check_proof.h"
 
-bool policy_applied = true;
+bool policy_app = false;
 int minimaxdepth = 2;
 
 using namespace std;
 using namespace std::chrono;
 
 /* given a text file containing the positions involved in proof line by line , check whether the proof is correct */
+
+// return preffered move for a position
+Move policyMove(Game* game){
+    return findBestMove(game , minimaxdepth);
+
+    /*for(int i = 0; i < M*N; i++)
+        if (game->isValidMove(i/M, i%M))
+            return i;  */
+}
 
 bool check_proof(){
     vector<string> nodes;
@@ -21,9 +31,14 @@ bool check_proof(){
         nodes.push_back(temp);
     }
 
+    newf.close();
+
     queue<Game*> games;
 
-    Game* g = new Game(make_board_from_file(nodes[0]));
+    //Bitboard board(temp);
+    CharSS board(nodes[0]);
+
+    Game* g = board.clone();
     // assert the node is a MAX node
     games.push(g);
 
@@ -41,9 +56,9 @@ bool check_proof(){
         else if(score == 10)
             continue;
 
-        vector<string> temp = g1->generate_children();
+        vector<string> temp = g1->generateChildren();
 
-        if(g1->isPlayer){
+        if(g1->isPlayer()){
             bool found = false;
             vector<string>::iterator it;
             string tp;
@@ -60,11 +75,11 @@ bool check_proof(){
 
             if(!found){
                 //g1->print_board();
-                if(policy_applied){
-                    Move policy_move = findBestMove(g1 , minimaxdepth);
-                    g1->make_move(true , policy_move.row , policy_move.col);
-                    games.push(new Game(g1->board));
-                    g1->undo_move(policy_move.row , policy_move.col);
+                if(policy_app){
+                    Move policy_move = policyMove(g1);
+                    Game* copygame = g1->clone();
+                    copygame->make_move(policy_move.row , policy_move.col);
+                    games.push(copygame);
                 }
 
                 else{
@@ -73,13 +88,22 @@ bool check_proof(){
                 }
             }
 
-            else
-                games.push(new Game(make_board_from_file(tp)));
+            else{
+                //Bitboard board(temp);
+                CharSS board(tp);
+
+                Game* g = board.clone();
+                games.push(g);
+            }
         }
 
         else{
             for(int i = 0 ; i < temp.size() ; i++){
-                games.push(new Game(make_board_from_file(temp[i])));
+                //Bitboard board(temp);
+                CharSS board(temp[i]);
+
+                Game* g = board.clone();
+                games.push(g);
             }
         }
     }
@@ -87,7 +111,28 @@ bool check_proof(){
     return true;
 }
 
-int main(){
+/*bool check_proof(){
+    vector<string> nodes;
+
+    fstream outfile2;
+    outfile2.open("./output/proof.txt",ios::in);
+
+    string temp;
+
+    while(getline(outfile2,temp)){
+        nodes.push_back(temp);
+    }
+
+    outfile2.close();
+
+    queue<Game*> test;
+
+    CharSS board(nodes[0]);
+
+
+}*/
+
+int check_proof_main(){
     fstream outfile1;
     outfile1.open("./output/output.txt",ios::out);
 

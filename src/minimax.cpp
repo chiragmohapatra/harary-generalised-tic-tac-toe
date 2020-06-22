@@ -58,7 +58,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta , int maxde
                 // Check if cell is empty 
                 if (game->isValidMove(i,j)){ 
                     // Make the move 
-                    game->make_move(true , i , j); 
+                    game->make_move(i , j); 
 
                     int val = minimax(game, depth+1, !isMax , alpha , beta , maxdepth);
   
@@ -88,7 +88,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta , int maxde
                 if (game->isValidMove(i,j)){
 
                     // Make the move 
-                    game->make_move(false , i , j); 
+                    game->make_move(i , j); 
   
                     int val = minimax(game, depth+1, !isMax , alpha , beta , maxdepth);
   
@@ -119,7 +119,7 @@ Move findBestMove(Game* game , int maxdepth){
     /*Traverse all cells, evaluate minimax function for 
       all empty cells. And return the cell with optimal 
       value.*/ 
-    for (int i = 0; i < N; i++) 
+    for (int i = 0; i < M; i++) 
     { 
         for (int j = 0; j < N; j++) 
         { 
@@ -127,7 +127,7 @@ Move findBestMove(Game* game , int maxdepth){
             if (game->isValidMove(i,j)) 
             { 
                 // Make the move 
-                game->make_move(true,i,j);
+                game->make_move(i,j);
   
                 // compute evaluation function for this 
                 // move. 
