@@ -3,10 +3,11 @@ INC_DIR := ./src/includes
 LIB_DIR := ./lib
 OBJ_DIR := ./obj
 SRC_DIR := ./src
+OUT_DIR = ./output
 VPATH := $(SRC_DIR)
 CXXFLAGS := -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
 
-SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/monte_carlo_simulator.cpp $(SRC_DIR)/generalised_tic_tac_toe_bitboard.cpp
+SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/pn_search_DAG.cpp $(SRC_DIR)/check_proof.cpp
 
 OBJECTS := $(subst $(SRC_DIR),$(OBJ_DIR),$(SRC:%.cpp=%.o))
 LIBS := $(LIB_DIR)/generalised_tic_tac_toe.a $(LIB_DIR)/minimax.a
@@ -18,7 +19,7 @@ all: $(EXEC)
 #	g++ pn_search_unified.o -o exec -L. -lgeneralised_tic_tac_toe -lminimax
 
 $(BIN_DIR)/exec: $(OBJECTS) $(LIBS)
-	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR) $(OUT_DIR)
 	g++ $(CXXFLAGS) -o $(BIN_DIR)/exec $^
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(HEADERS)
