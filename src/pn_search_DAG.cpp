@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #include "generalised_tic_tac_toe.h"
-#include "generalised_tic_tac_toe_improved.h"
+#include "generalised_tic_tac_toe_bitboard.h"
 #include "minimax.h"
 #include "pn_search_DAG.h"
 

@@ -3,7 +3,7 @@
 #include "pn_search_DAG.h"
 #include "monte_carlo_simulator.h"
 #include "generalised_tic_tac_toe.h"
-#include "generalised_tic_tac_toe_improved.h"
+#include "generalised_tic_tac_toe_bitboard.h"
 #include "check_proof.h"
 
 int main(){
