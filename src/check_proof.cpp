@@ -1,5 +1,6 @@
 #include <bits/stdc++.h>
 #include "../includes/generalised_tic_tac_toe.h"
+#include "../includes/generalised_tic_tac_toe_bitboard.h"
 #include "../includes/minimax.h"
 #include "../includes/check_proof.h"
 
@@ -13,7 +14,7 @@ using namespace std::chrono;
 
 // return preffered move for a position
 Move policyMove(Game* game){
-    //return findBestMove(game , minimaxdepth);
+    return findBestMove(game , minimaxdepth);
 
     Move opt;
     for(int i = 0; i < M; i++){
@@ -44,7 +45,7 @@ bool check_proof(){
 
     queue<Game*> games;
 
-    //Bitboard board(temp);
+    //Bitboard board(nodes[0]);
     CharSS board(nodes[0]);
 
     Game* g = board.clone();
@@ -59,6 +60,7 @@ bool check_proof(){
 
         if(score == -10){
             g1->print_board();
+            //cout<<g1->print_as_string()<<endl;
             return false;
         }
 
@@ -98,7 +100,7 @@ bool check_proof(){
             }
 
             else{
-                //Bitboard board(temp);
+                //Bitboard board(tp);
                 CharSS board(tp);
 
                 Game* g = board.clone();
@@ -108,7 +110,7 @@ bool check_proof(){
 
         else{
             for(int i = 0 ; i < temp.size() ; i++){
-                //Bitboard board(temp);
+                //Bitboard board(temp[i]);
                 CharSS board(temp[i]);
 
                 Game* g = board.clone();

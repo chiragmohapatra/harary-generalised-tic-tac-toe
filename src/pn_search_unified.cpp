@@ -11,7 +11,7 @@ using namespace std::chrono;
 
 bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
-bool minimal_proof = false; // determines whether to run minimal proof search
+bool minimal_proof = true; // determines whether to run minimal proof search
 bool policy_applied = true;
 int depth_minimax = 1;
 bool minimal_policy = false; // determines whether to run minimal policy search or not
@@ -22,7 +22,7 @@ int ctr_nodes = 0;
 
 // return preffered move for a position
 Move policy(Game* game){
-    //return findBestMove(game , depth_minimax);
+    return findBestMove(game , depth_minimax);
 
     Move opt;
     for(int i = 0; i < M; i++){
@@ -72,33 +72,12 @@ class pn_node{
             game = board;
             const int legals = game->legalMoves();
             no_of_children = legals;
-            value = '2';
+            isInternal = false;
             ctr_nodes++;
+            evaluate_node();
+            setProofandDisproofNumbers();
             // initialise pn , dn , mpn
             // call evalute always here for each node
-            if(!isMobile){
-                    proof_number = 1;
-                    disproof_number = 1;
-                    mpn = 1;
-                    dmpn = 1;
-                }
-
-            else{
-                    if(type){
-                        proof_number = 1;
-                        mpn = 1;
-                        disproof_number = legals;
-                        dmpn = legals;
-                    }
-
-                    else{
-                        proof_number = legals;
-                        mpn = legals;
-                        disproof_number = 1;
-                        dmpn = 1;
-                    }
-
-                }
         }
 
         void set_parent(pn_node* par){
@@ -184,8 +163,9 @@ void pn_node::evaluate_node(){
 
     int score = game->evaluate();
 
-    if(score == 10)
+    if(score == 10){
         value = '1';
+    }
 
     else if(score == -10)
         value = '0';
@@ -388,8 +368,8 @@ void pn_node::ExpandNode(){
     generate_children();
 
     for(int i = 0 ; i < no_of_children ; i++){
-        children[i]->evaluate_node();
-        children[i]->setProofandDisproofNumbers();
+        //children[i]->evaluate_node();
+        //children[i]->setProofandDisproofNumbers();
 
         if(type){ // OR node
             if(children[i]->proof_number == 0)
@@ -451,7 +431,7 @@ void store_proof(pn_node* root){
         pn_node* n = q.front();
         q.pop();
 
-        if(!n->type){
+        if(!n->type && !n->reco_by_policy){
             //outfile4<<n->game->print_as_string()<<endl;
             node_set.insert(n->game->print_as_string());
         }
@@ -475,16 +455,22 @@ void store_proof(pn_node* root){
                     n->game->make_move(optimal_move.row , optimal_move.col);
                     string temp_board = n->game->print_as_string();
                     n->game->undo_move(optimal_move.row,optimal_move.col);
+                    
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->game->print_as_string() == temp_board){
                             if(n->children[i]->disproof_number != inf){
-                                for(int j  = 0 ; j < n->no_of_children ; j++){
+                                for(int j = 0 ; j < n->no_of_children ; j++){
                                     if(n->children[j]->disproof_number == inf){
                                         q.push(n->children[j]);
                                         break;
                                     }
                                 }
                                 break;
+                            }
+
+                            else{
+                                n->children[i]->reco_by_policy = true;
+                                q.push(n->children[i]);
                             }
                         }
                     }
@@ -514,8 +500,8 @@ void store_proof(pn_node* root){
 }
 
 void pn_search(pn_node* root){
-    root->evaluate_node();
-    root->setProofandDisproofNumbers();
+    //root->evaluate_node();
+    //root->setProofandDisproofNumbers();
     pn_node* current = root;
     int ctr = 0;
 
@@ -527,7 +513,7 @@ void pn_search(pn_node* root){
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
         if(ctr % 1000 == 0){
-//            cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
+            //cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
             //current->print_data();
         }
         ctr++;
@@ -556,13 +542,13 @@ int pn_search_unified_main(){
                 pn_node* root_mobile = new pn_node(&board);
                 root_mobile->set_parent(NULL);
 
-                //auto start = high_resolution_clock::now();
-                pn_search(root_mobile);
-                //auto stop = high_resolution_clock::now();
-
                 auto start = high_resolution_clock::now();
-                store_proof(root_mobile);
+                pn_search(root_mobile);
                 auto stop = high_resolution_clock::now();
+
+                //auto start = high_resolution_clock::now();
+                store_proof(root_mobile);
+                //auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";

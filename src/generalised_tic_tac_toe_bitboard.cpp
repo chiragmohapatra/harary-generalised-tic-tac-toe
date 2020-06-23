@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#include "generalised_tic_tac_toe_improved.h"
+#include "generalised_tic_tac_toe_bitboard.h"
 
 using namespace std;
 
@@ -9,6 +9,19 @@ using namespace std;
 #define opponent 'o'
 
 // Assume that white represents player and black represents opponent
+
+unsigned long long int hash_func(string str){
+    unsigned long long int ctr = 0;
+
+    for(int i = 0 ; i < M*N ; i++){
+        if(str[i] == '1')
+            ctr+=(pow(3,i));
+        else
+            ctr+=(2*pow(3,i));
+    }
+
+    return ctr;
+}
 
 bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
     int size = M*N;
@@ -20,6 +33,8 @@ bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
 
     return temp;
 }
+
+int polyamino_type = 0; // 0 for Tippy , 1 for Fatty and 2 for Tic
 
 /*class Bitboard{
     public:
@@ -49,24 +64,38 @@ bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
 
 Bitboard::Bitboard(){
   legal_moves = M*N;
+  is_player = true;
+  hash_value = 0;
 }
 
 Bitboard::Bitboard(string str){
   legal_moves = 0;
   bitset<M*N> whites,blacks;
+  int cntw = 0 , cntb = 0;
+
     for(int i = 0 ; i < M*N ; i++){
         char c = str.at(i);
         if(c == '1'){
             whites.set(i);
+            cntw++;
         }
-        else if(c == '2')
+        else if(c == '2'){
             blacks.set(i);
+            cntb++;
+        }
         else
           legal_moves++;
     }
 
     expanded_whites = expand_bitset_right_down(whites);
     expanded_blacks = expand_bitset_right_down(blacks);
+
+    if(cntw == cntb)
+        is_player = true;
+    else
+        is_player = false;
+
+    hash_value = hash_func(str);
 }
 
 Bitboard::~Bitboard(){
@@ -83,8 +112,7 @@ int Bitboard::legalMoves(){
 }
 
 unsigned long long int Bitboard::hashValue(){
-    assert(false);
-//    return hash_value;
+    return hash_value;
 }
 
 
@@ -108,63 +136,115 @@ bool Bitboard::isTerminal(){
 
 int Bitboard::evaluate(){
 
-    bitset<(M+1)*(N+1)> tempw1 = expanded_whites >> 1; // right
-    bitset<(M+1)*(N+1)> tempw2 = tempw1 >> (N+1); // right and down
-    bitset<(M+1)*(N+1)> tempw3 = tempw2 >> 1; // right , down , right
+    bitset<(M+1)*(N+1)> tempw1 , tempw2 , tempw3 , tempb1 , tempb2 , tempb3;
 
-    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
-        return 10;
+    switch(polyamino_type){
+        case 0:
+            tempw1 = expanded_whites >> 1; // right
+            tempw2 = tempw1 >> (N+1); // right and down
+            tempw3 = tempw2 >> 1; // right , down , right
 
-    tempw1 = expanded_whites >> (N+1); // down
-    tempw2 = tempw1 >> 1; // down , right
-    tempw3 = tempw2 >> (N+1);  // down , right , down
+            if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+                return 10;
 
-    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
-        return 10;
+            tempw1 = expanded_whites >> (N+1); // down
+            tempw2 = tempw1 >> 1; // down , right
+            tempw3 = tempw2 >> (N+1);  // down , right , down
 
-    tempw1 = expanded_whites >> 1; // right
-    tempw2 = tempw1 << (N+1); // right and top
-    tempw3 = tempw2 >> 1; // right , top , right
+            if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+                return 10;
 
-    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
-        return 10;
+            tempw1 = expanded_whites >> 1; // right
+            tempw2 = tempw1 << (N+1); // right and top
+            tempw3 = tempw2 >> 1; // right , top , right
 
-    tempw1 = expanded_whites << (N+1); // top
-    tempw2= tempw1 >> 1; // top , right
-    tempw3 = tempw2 << (N+1);  // down , left , down
+            if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+                return 10;
 
-    if((expanded_whites & tempw1 & tempw2 & tempw3).any())
-        return 10;
+            tempw1 = expanded_whites << (N+1); // top
+            tempw2= tempw1 >> 1; // top , right
+            tempw3 = tempw2 << (N+1);  // down , left , down
 
-    bitset<(M+1)*(N+1)> tempb1 = expanded_blacks >> 1;
-    bitset<(M+1)*(N+1)> tempb2 = tempb1 >> (N+1);
-    bitset<(M+1)*(N+1)> tempb3 = tempb2 >> 1;
+            if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+                return 10;
 
-    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
-        return -10;
+            tempb1 = expanded_blacks >> 1;
+            tempb2 = tempb1 >> (N+1);
+            tempb3 = tempb2 >> 1;
 
-    tempb1 = expanded_blacks >> (N+1);
-    tempb2 = tempb1 >> 1;
-    tempb3 = tempb2 >> (N+1);
+            if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+                return -10;
 
-    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
-        return -10;
+            tempb1 = expanded_blacks >> (N+1);
+            tempb2 = tempb1 >> 1;
+            tempb3 = tempb2 >> (N+1);
 
-    tempb1 = expanded_blacks >> 1; // left
-    tempb2 = tempb1 << (N+1); // left and down
-    tempb3 = tempb2 >> 1; // left , down , left
+            if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+                return -10;
 
-    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
-        return -10;
+            tempb1 = expanded_blacks >> 1; // left
+            tempb2 = tempb1 << (N+1); // left and down
+            tempb3 = tempb2 >> 1; // left , down , left
 
-    tempb1 = expanded_blacks << (N+1); // down
-    tempb2 = tempb1 >> 1; // down , left
-    tempb3 = tempb2 << (N+1);  // down , left , down
+            if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+                return -10;
 
-    if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
-        return -10;
+            tempb1 = expanded_blacks << (N+1); // down
+            tempb2 = tempb1 >> 1; // down , left
+            tempb3 = tempb2 << (N+1);  // down , left , down
+
+            if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+                return -10;
+
+            break;
+
+        case 1:
+            tempw1 = expanded_whites >> 1; // right
+            tempw2 = tempw1 >> (N+1); // right and down
+            tempw3 = tempw2 << 1; // right , down , left
+
+            if((expanded_whites & tempw1 & tempw2 & tempw3).any())
+                return 10;
+
+            tempb1 = expanded_blacks >> 1;
+            tempb2 = tempb1 >> (N+1);
+            tempb3 = tempb2 << 1;
+
+            if((expanded_blacks & tempb1 & tempb2 & tempb3).any())
+                return -10;
+
+            break;
+
+        case 2:
+            tempw1 = expanded_whites >> 1;
+            tempw2 = tempw1 >> 1;
+
+            if((expanded_whites & tempw1 & tempw2).any())
+                return 10;
+
+            tempw1 = expanded_whites >> (N+1);
+            tempw2 = tempw1 >> (N+1);
+
+            if((expanded_whites & tempw1 & tempw2).any())
+                return 10;
+
+            tempb1 = expanded_blacks >> 1;
+            tempb2 = tempb1 >> 1;
+
+            if((expanded_blacks & tempb1 & tempb2).any())
+                return -10;
+
+            tempb1 = expanded_blacks >> (N+1);
+            tempb2 = tempb1 >> (N+1);
+
+            if((expanded_blacks & tempb1 & tempb2).any())
+                return -10;
+
+            break;
+    }
+
     
-    else if(!isMovesLeft())
+    if(!isMovesLeft())
         return -10;
 
     return 0;
@@ -184,15 +264,17 @@ bool Bitboard::isValidMove(int row, int col) const{
         return true;
 }
 
-void Bitboard::make_move(bool isPlayer , int row , int col){
+void Bitboard::make_move(int row , int col){
     int index = (M+1)*(N+1) - ((N+1)*row + col) - 1;
 
-    if(isPlayer)
+    if(is_player)
         expanded_whites.set(index);
     else
         expanded_blacks.set(index);
 
     legal_moves--;
+    is_player = !is_player;
+    hash_value = hash_func(print_as_string());
 }
 
 void Bitboard::undo_move(int row , int col){
@@ -202,6 +284,35 @@ void Bitboard::undo_move(int row , int col){
     expanded_blacks.reset(index);
 
     legal_moves++;
+    is_player = !is_player;
+    hash_value = hash_func(print_as_string());
+}
+
+bool Bitboard::isPlayer(){
+    return is_player;
+}
+
+vector<string> Bitboard::generateChildren(){
+    string str = print_as_string();
+    vector<string> children;
+
+    for(int i = 0 ; i < M*N ; i++){
+        if(str[i] == '0'){
+            if(is_player){
+                str[i] = '1';
+                children.push_back(str);
+                str[i] = '0';
+            }
+
+            else{
+                str[i] = '2';
+                children.push_back(str);
+                str[i] = '0';
+            }
+        }
+    }
+
+    return children;
 }
 
 void Bitboard::print_board(){
