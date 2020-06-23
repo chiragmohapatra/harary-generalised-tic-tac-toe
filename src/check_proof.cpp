@@ -3,8 +3,8 @@
 #include "../includes/minimax.h"
 #include "../includes/check_proof.h"
 
-bool policy_app = false;
-int minimaxdepth = 2;
+bool policy_app = true;
+int minimaxdepth = 1;
 
 using namespace std;
 using namespace std::chrono;
@@ -13,11 +13,20 @@ using namespace std::chrono;
 
 // return preffered move for a position
 Move policyMove(Game* game){
-    return findBestMove(game , minimaxdepth);
+    //return findBestMove(game , minimaxdepth);
 
-    /*for(int i = 0; i < M*N; i++)
-        if (game->isValidMove(i/M, i%M))
-            return i;  */
+    Move opt;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                opt.row = i;
+                opt.col = j;
+                break;
+            }
+        }
+    }  
+    
+    return opt;
 }
 
 bool check_proof(){
@@ -147,6 +156,8 @@ int check_proof_main(){
         cout<<"Correct proof\n";
     else
         cout<<"Wrong proof\n";
+
+    outfile1.close();
 
     return 0;
 }

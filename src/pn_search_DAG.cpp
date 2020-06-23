@@ -19,6 +19,18 @@ int depth_minimax = 2;
 
 Move policy(Game* game){
     return findBestMove(game , depth_minimax);
+
+    /*Move opt;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++)
+        if(game->isValidMove(i,j)){
+            opt.row = i;
+            opt.col = j;
+            break;
+        }
+    }  
+    
+    return opt;*/
 }
 
 int min(int a , int b){

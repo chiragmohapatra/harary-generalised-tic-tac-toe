@@ -11,9 +11,10 @@ using namespace std::chrono;
 
 bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
-bool minimal_proof = false;
+bool minimal_proof = false; // determines whether to run minimal proof search
 bool policy_applied = true;
-int depth_minimax = 2;
+int depth_minimax = 1;
+bool minimal_policy = false; // determines whether to run minimal policy search or not
 
 int ctr_nodes = 0;
 
@@ -21,17 +22,20 @@ int ctr_nodes = 0;
 
 // return preffered move for a position
 Move policy(Game* game){
-    return findBestMove(game , depth_minimax);
+    //return findBestMove(game , depth_minimax);
 
-    /*Move opt;
-    for(int i = 0; i < M*N; i++){
-        if(game->isValidMove(i/M, i%M)){
-            opt.row = i/M;
-            opt.col = i%M;
+    Move opt;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                opt.row = i;
+                opt.col = j;
+                break;
+            }
         }
     }  
     
-    return opt;*/
+    return opt;
 }
 
 int min(int a , int b){
@@ -62,6 +66,7 @@ class pn_node{
         bool isInternal; // true for internal node and false otherwise
         int no_of_children;
         void generate_children(); // generates children of the node
+        bool reco_by_policy;
 
         pn_node(Game * board){
             game = board;
@@ -143,6 +148,11 @@ void pn_node::generate_children(){
     int k = 0;
     children = new pn_node*[no_of_children];
 
+    Move opt_move;
+
+    if(minimal_policy)
+        opt_move = policy(game);
+
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(game->isValidMove(i,j)){
@@ -151,6 +161,11 @@ void pn_node::generate_children(){
                 copygame->make_move(i , j);
 
                 pn_node* child = new pn_node(copygame);
+
+                if(minimal_policy){
+                    if(opt_move.row == i && opt_move.col == j)
+                        child->reco_by_policy = true;
+                }
                 //pn_node* child = new pn_node(game->board);
 
                 //undo the move
@@ -284,6 +299,14 @@ void pn_node::setProofandDisproofNumbers(){
 
                 break;
         }
+    }
+
+    if(minimal_policy && reco_by_policy){
+        if(mpn != inf)
+            mpn--;
+
+        if(dmpn != inf)
+            dmpn--;
     }
 
 }
@@ -439,36 +462,29 @@ void store_proof(pn_node* root){
             if(n->type){
                 // just store the child with the smallest mpn
                 if(!policy_applied){
-                    int itemp = 0 , mpn_temp = inf;
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->disproof_number == inf){
-                            if(n->children[i]->mpn < mpn_temp || mpn_temp == inf){
-                                mpn_temp = n->children[i]->mpn;
-                                itemp = i;
-                            }
+                            q.push(n->children[i]);
+                            break;
                         }
                     }
-
-                    q.push(n->children[itemp]);
                 }
 
                 else{
                     Move optimal_move = policy(n->game);
                     n->game->make_move(optimal_move.row , optimal_move.col);
                     string temp_board = n->game->print_as_string();
+                    n->game->undo_move(optimal_move.row,optimal_move.col);
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->game->print_as_string() == temp_board){
                             if(n->children[i]->disproof_number != inf){
-                                int itemp = 0 , mpn_temp = inf;
-                                for(int j = 0 ; j < n->no_of_children ; j++){
+                                for(int j  = 0 ; j < n->no_of_children ; j++){
                                     if(n->children[j]->disproof_number == inf){
-                                        if(n->children[j]->mpn < mpn_temp || mpn_temp == inf){
-                                            mpn_temp = n->children[j]->mpn;
-                                            itemp = j;
-                                        }
+                                        q.push(n->children[j]);
+                                        break;
                                     }
                                 }
-                                q.push(n->children[itemp]);
+                                break;
                             }
                         }
                     }

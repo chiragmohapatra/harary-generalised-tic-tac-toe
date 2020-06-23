@@ -46,7 +46,7 @@ int minimax(Game* game, int depth, bool isMax , int alpha , int beta , int maxde
   
     // If there are no more moves and no winner then 
     // it is a tie 
-    if (game->isMovesLeft()==false || depth >= maxdepth) 
+    if (game->isMovesLeft()==false || depth > maxdepth) 
         return 0; 
   
     // If this maximizer's move 
