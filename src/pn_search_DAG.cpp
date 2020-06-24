@@ -10,17 +10,17 @@ using namespace std::chrono;
 #define inf -1
 
 bool isMobile = false;
-bool minimal_proof = false;
-bool policy_applied = false;
-bool minimal_policy_search = false;
-int depth_minimax = 2;
+bool minimal_proof = true;
+bool policy_applied = true;
+bool minimal_policy_search = true;
+int depth_minimax = 1;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
 Move policy(Game* game){
     return findBestMove(game , depth_minimax);
 
-    /*Move opt;
+    Move opt;
     for(int i = 0; i < M; i++){
         for(int j = 0 ; j < N ; j++)
         if(game->isValidMove(i,j)){
@@ -30,7 +30,7 @@ Move policy(Game* game){
         }
     }  
     
-    return opt;*/
+    return opt;
 }
 
 int min(int a , int b){
@@ -56,7 +56,7 @@ class pn_node{
     public:
 
         Game* game; // Todo just store moves instead of complte game in each node
-        pn_node** children; // an array of pointers to the children
+        vector<unsigned long long int> children; // an array of pointers to the children
         bool type; // true for OR node and false for AND node
         char value; 
         bool isInternal; // true for internal node and false otherwise
@@ -65,7 +65,7 @@ class pn_node{
         bool reco_by_policy;
 
         int proof_number , disproof_number , mpn , dmpn;
-        vector<pn_node*> parents;
+        vector<unsigned long long int> parents;
         
         pn_node(Game* board);
 
@@ -75,9 +75,8 @@ class pn_node{
                 type = true;
             else{
                 type = !(par->type);
-                parents.push_back(par);
+                parents.push_back(par->game->hashValue());
             }
-            isInternal = false;
         }
 
         ~pn_node(){
@@ -102,33 +101,12 @@ pn_node::pn_node(Game* board){
     game = board;
     const int legals = game->legalMoves();
     no_of_children = legals;
-    value = '2';
     ctr_nodes++;
+    isInternal = false;
     // initialise pn , dn , mpn
     // call evalute always here for each node
-    if(!isMobile){
-            proof_number = 1;
-            disproof_number = 1;
-            mpn = 1;
-            dmpn = 1;
-        }
-
-    else{
-            if(type){
-                proof_number = 1;
-                mpn = 1;
-                disproof_number = legals;
-                dmpn = legals;
-            }
-
-            else{
-                proof_number = legals;
-                mpn = legals;
-                disproof_number = 1;
-                dmpn = 1;
-            }
-
-        }
+    evaluate_node();
+    setProofandDisproofNumbers();
     transposition_table[game->hashValue()] = this;
     reco_by_policy = false;
 }
@@ -137,9 +115,6 @@ void pn_node::generate_children(){
 
     if(no_of_children == 0)
         return;
-
-    int k = 0;
-    children = new pn_node*[no_of_children];
 
     Move opt_move;
 
@@ -155,25 +130,24 @@ void pn_node::generate_children(){
                 copygame->make_move(i , j);
 
                 if(transposition_table[copygame->hashValue()] != NULL){
-                    children[k++] = transposition_table[copygame->hashValue()];
+                    children.push_back(copygame->hashValue());
                     transposition_table[copygame->hashValue()]->set_parent(this);
                 }
 
                 else{
-                    pn_node* child = new pn_node(copygame);
+                    transposition_table[copygame->hashValue()]  = new pn_node(copygame);
                     if(minimal_policy_search){
                         if(i == opt_move.row && j == opt_move.col)
-                            child->reco_by_policy = true;
+                            transposition_table[copygame->hashValue()] ->reco_by_policy = true;
                     }
-                    transposition_table[game->hashValue()] = child;
+                    
                     //pn_node* child = new pn_node(game->board);
 
                     //undo the move
                     //game->undo_move(i,j);
 
-                    child->set_parent(this);
-                    children[k++] = child;
-
+                    transposition_table[copygame->hashValue()]->set_parent(this);
+                    children.push_back(copygame->hashValue());
                 }
 
                 
@@ -203,13 +177,13 @@ void pn_node::setProofandDisproofNumbers(){
             mpn = inf; dmpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
-                if(children[i]->disproof_number == inf)
+                if(transposition_table[children[i]]->disproof_number == inf)
                     disproof_inf = true;
-                disproof_number+=(children[i]->disproof_number);
-                dmpn+=(children[i]->dmpn);
-                proof_number = min(proof_number , children[i]->proof_number);
-                mpn = min(mpn , children[i]->mpn);
-                if(children[i]->proof_number == 0)
+                disproof_number+=(transposition_table[children[i]]->disproof_number);
+                dmpn+=(transposition_table[children[i]]->dmpn);
+                proof_number = min(proof_number , transposition_table[children[i]]->proof_number);
+                mpn = min(mpn , transposition_table[children[i]]->mpn);
+                if(transposition_table[children[i]]->proof_number == 0)
                     proof_zero = true;
             }
 
@@ -230,13 +204,13 @@ void pn_node::setProofandDisproofNumbers(){
             dmpn = inf; mpn = 1;
 
             for(int i = 0 ; i < no_of_children ; i++){
-                if(children[i]->proof_number == inf)
+                if(transposition_table[children[i]]->proof_number == inf)
                     proof_inf = true;
-                proof_number+=(children[i]->proof_number);
-                mpn+=(children[i]->mpn);
-                disproof_number = min(disproof_number , children[i]->disproof_number);
-                dmpn = min(dmpn , children[i]->dmpn);
-                if(children[i]->disproof_number == 0)
+                proof_number+=(transposition_table[children[i]]->proof_number);
+                mpn+=(transposition_table[children[i]]->mpn);
+                disproof_number = min(disproof_number , transposition_table[children[i]]->disproof_number);
+                dmpn = min(dmpn , transposition_table[children[i]]->dmpn);
+                if(transposition_table[children[i]]->disproof_number == 0)
                     disproof_zero = true;
             }
 
@@ -321,23 +295,23 @@ pn_node* pn_node::selectMostProvingNode(){
             pn_node* best;
 
             if(n->type){ // OR node
-                value = n->children[0]->proof_number;
-                best = n->children[0];
+                value = transposition_table[n->children[0]]->proof_number;
+                best = transposition_table[n->children[0]];
                 for(int i = 1 ; i < n->no_of_children ; i++){
-                    if((value > n->children[i]->proof_number || value == inf) && n->children[i]->proof_number != inf){ // select one with the minimum proof number
-                        best = n->children[i];
-                        value = n->children[i]->proof_number;
+                    if((value > transposition_table[n->children[i]]->proof_number || value == inf) && transposition_table[n->children[i]]->proof_number != inf){ // select one with the minimum proof number
+                        best = transposition_table[n->children[i]];
+                        value = transposition_table[n->children[i]]->proof_number;
                     }
                 }
             }
 
             else{ // AND node
-                value = n->children[0]->disproof_number;
-                best = n->children[0];
+                value = transposition_table[n->children[0]]->disproof_number;
+                best = transposition_table[n->children[0]];
                 for(int i = 1 ; i < n->no_of_children ; i++){
-                    if((value > n->children[i]->disproof_number || value == inf) && n->children[i]->disproof_number != inf){ // select one with the minimum disproof number
-                        best = n->children[i];
-                        value = n->children[i]->disproof_number;
+                    if((value > transposition_table[n->children[i]]->disproof_number || value == inf) && transposition_table[n->children[i]]->disproof_number != inf){ // select one with the minimum disproof number
+                        best = transposition_table[n->children[i]];
+                        value = transposition_table[n->children[i]]->disproof_number;
                     }
                 
                 }
@@ -353,23 +327,23 @@ pn_node* pn_node::selectMostProvingNode(){
             pn_node* best;
 
             if(n->type){ // OR node
-                value = n->children[0]->mpn;
-                best = n->children[0];
+                value = transposition_table[n->children[0]]->mpn;
+                best = transposition_table[n->children[0]];
                 for(int i = 1 ; i < n->no_of_children ; i++){
-                    if((value > n->children[i]->mpn || value == inf) && n->children[i]->mpn != inf){ // select one with the minimum proof number
-                        best = n->children[i];
-                        value = n->children[i]->mpn;
+                    if((value > transposition_table[n->children[i]]->mpn || value == inf) && transposition_table[n->children[i]]->mpn != inf){ // select one with the minimum proof number
+                        best = transposition_table[n->children[i]];
+                        value = transposition_table[n->children[i]]->mpn;
                     }
                 }
             }
 
             else{ // AND node
-                value = n->children[0]->dmpn;
-                best = n->children[0];
+                value = transposition_table[n->children[0]]->dmpn;
+                best = transposition_table[n->children[0]];
                 for(int i = 1 ; i < n->no_of_children ; i++){
-                    if((value > n->children[i]->dmpn || value == inf) && n->children[i]->dmpn != inf){ // select one with the minimum disproof number
-                        best = n->children[i];
-                        value = n->children[i]->dmpn;
+                    if((value > transposition_table[n->children[i]]->dmpn || value == inf) && transposition_table[n->children[i]]->dmpn != inf){ // select one with the minimum disproof number
+                        best = transposition_table[n->children[i]];
+                        value = transposition_table[n->children[i]]->dmpn;
                     }
                 
                 }
@@ -388,21 +362,21 @@ void pn_node::ExpandNode(){
         return;
     generate_children();
 
-    for(int i = 0 ; i < no_of_children ; i++){
-        children[i]->evaluate_node();
-        children[i]->setProofandDisproofNumbers();
+    /*for(int i = 0 ; i < no_of_children ; i++){
+        transposition_table[children[i]]->evaluate_node();
+        transposition_table[children[i]]->setProofandDisproofNumbers();
 
         if(type){ // OR node
-            if(children[i]->proof_number == 0)
+            if(transposition_table[children[i]]->proof_number == 0)
                 break;
         }
 
         else{
-            if(children[i]->disproof_number == 0)
+            if(transposition_table[children[i]]->disproof_number == 0)
                 break;
         }
 
-    }
+    }*/
 
     isInternal = true;
 }
@@ -428,7 +402,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
 
         else{
             for(int i = 0 ; i < dummy->parents.size() ; i++)
-                nodes.push(dummy->parents[i]);
+                nodes.push(transposition_table[dummy->parents[i]]);
         }
     }
 
@@ -454,7 +428,7 @@ void store_proof(pn_node* root){
         pn_node* n = q.front();
         q.pop();
 
-        if(!n->type){
+        if(!n->type && !n->reco_by_policy){
             //outfile4<<n->game->print_as_string()<<endl;
             node_set.insert(n->game->print_as_string());
         }
@@ -466,8 +440,8 @@ void store_proof(pn_node* root){
                 // just store the child with the smallest mpn
                 if(!policy_applied){
                     for(int i = 0 ; i < n->no_of_children ; i++){
-                        if(n->children[i]->disproof_number == inf){
-                            q.push(n->children[i]);
+                        if(transposition_table[n->children[i]]->disproof_number == inf){
+                            q.push(transposition_table[n->children[i]]);
                             break;
                         }
                     }
@@ -479,14 +453,19 @@ void store_proof(pn_node* root){
                     n->game->make_move(optimal_move.row , optimal_move.col);
                     string temp_board = n->game->print_as_string();
                     for(int i = 0 ; i < n->no_of_children ; i++){
-                        if(n->children[i]->game->print_as_string() == temp_board){
-                            if(n->children[i]->disproof_number != inf){
+                        if(transposition_table[n->children[i]]->game->print_as_string() == temp_board){
+                            if(transposition_table[n->children[i]]->disproof_number != inf){
                                 for(int j = 0 ; j < n->no_of_children ; j++){
-                                    if(n->children[j]->disproof_number == inf){
-                                        q.push(n->children[j]);
+                                    if(transposition_table[n->children[j]]->disproof_number == inf){
+                                        q.push(transposition_table[n->children[j]]);
                                         break;
                                     }
                                 }
+                            }
+
+                            else{
+                                transposition_table[n->children[i]]->reco_by_policy = true;
+                                q.push(transposition_table[n->children[i]]);
                             }
                         }
                     }
@@ -495,7 +474,7 @@ void store_proof(pn_node* root){
 
             else{
                 for(int i = 0 ; i < n->no_of_children ; i++){
-                    q.push(n->children[i]);
+                    q.push(transposition_table[n->children[i]]);
                 }
 
             }
@@ -557,19 +536,19 @@ int pn_search_DAG_main(){
                 pn_node* root_mobile = new pn_node(&board);
                 root_mobile->set_parent(NULL);
                 
-                //auto start = high_resolution_clock::now();
+                auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
-                //auto stop = high_resolution_clock::now();
+                auto stop = high_resolution_clock::now();
 
                 cout<<root_mobile->mpn<<" "<<root_mobile->dmpn<<endl;
 
-                for(int i = 0 ; i < root_mobile->no_of_children ; i++){
-                    cout<<root_mobile->children[i]->proof_number<<" "<<root_mobile->children[i]->disproof_number<<" "<<root_mobile->children[i]->mpn<<" "<<root_mobile->children[i]->dmpn<<endl;
-                }
+                /*for(int i = 0 ; i < root_mobile->no_of_children ; i++){
+                    cout<<root_mobile->transposition_table[children[i]]->proof_number<<" "<<root_mobile->transposition_table[children[i]]->disproof_number<<" "<<root_mobile->transposition_table[children[i]]->mpn<<" "<<root_mobile->transposition_table[children[i]]->dmpn<<endl;
+                }*/
 
-                auto start = high_resolution_clock::now();
-                //store_proof(root_mobile);
-                auto stop = high_resolution_clock::now();
+                //auto start = high_resolution_clock::now();
+                store_proof(root_mobile);
+                //auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0)
                     outfile1<<"Proved\n";
