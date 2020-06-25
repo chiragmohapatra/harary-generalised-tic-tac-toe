@@ -4,7 +4,7 @@
 #include "../includes/minimax.h"
 #include "../includes/check_proof.h"
 
-bool policy_app = true;
+bool policy_app = false;
 int minimaxdepth = 1;
 
 using namespace std;

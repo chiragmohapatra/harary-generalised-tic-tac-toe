@@ -12,7 +12,7 @@ using namespace std::chrono;
 bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
 bool minimal_proof = true; // determines whether to run minimal proof search
-bool policy_applied = true;
+bool policy_applied = false;
 int depth_minimax = 1;
 bool minimal_policy = false; // determines whether to run minimal policy search or not
 
@@ -367,7 +367,7 @@ void pn_node::ExpandNode(){
         return;
     generate_children();
 
-    for(int i = 0 ; i < no_of_children ; i++){
+    /*for(int i = 0 ; i < no_of_children ; i++){
         //children[i]->evaluate_node();
         //children[i]->setProofandDisproofNumbers();
 
@@ -380,7 +380,7 @@ void pn_node::ExpandNode(){
             if(children[i]->disproof_number == 0)
                 break;
         }
-    }
+    }*/
 
     isInternal = true;
 }

@@ -11,7 +11,7 @@ using namespace std;
     Currently , evaluate function : gives +10 if player 1 wins and -10 in case of draw or player 1 lose . 
     The board is of size MxN i.e M rows and N columns*/
 
-int polyamino_type = 0; // 0 for Tippy , 1 for Box/Fatty and 2 for Tic
+
 
 unsigned long long int hash_func(char**);
 
@@ -26,9 +26,8 @@ CharSS::CharSS(){
 
   legal_moves = M*N;
   hash_value = 0;
+  is_player = true;
 }
-
-
 
 // input a string of form 000011201.. till NxN where 0 represents _ , 1 respresents player and 2 represents opponent and it is row-wise
 CharSS::CharSS(string str){
@@ -55,9 +54,9 @@ CharSS::CharSS(string str){
 
     legal_moves = ctr;
     if(ctrp == ctro)
-        isPlayer = true;
+        is_player = true;
     else
-        isPlayer = false;
+        is_player = false;
     hash_value = hash_func(board);
 }
 
@@ -284,12 +283,12 @@ bool CharSS::isValidMove(int row , int col) const {
         return true;
 }
 
-void CharSS::make_move(bool isPlayer , int row , int col){
+void CharSS::make_move(int row , int col){
     if(board[row][col] != '_')
         return;
 
     else{
-        if(isPlayer){
+        if(is_player){
             board[row][col] = player;
             hash_value+=(pow(3,N*row + col));
         }
@@ -301,7 +300,8 @@ void CharSS::make_move(bool isPlayer , int row , int col){
         legal_moves--;
     }
 
-    isPlayer = !isPlayer;
+    is_player = !is_player;
+    //hash_value = hash_func(print_as_string());
 }
 
 void CharSS::undo_move(int row , int col){
@@ -312,6 +312,7 @@ void CharSS::undo_move(int row , int col){
 
     board[row][col] = '_';
     legal_moves++;
+    is_player = !is_player;
 }
 
 void CharSS::print_board(){
@@ -339,12 +340,17 @@ string CharSS::print_as_string() const {
     return str;
 }
 
-vector<string> CharSS::generate_children(){
+bool CharSS::isPlayer(){
+    return is_player;
+}
+
+
+vector<string> CharSS::generateChildren(){
     vector<string> children;
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(board[i][j] == '_'){
-                if(isPlayer)
+                if(is_player)
                     board[i][j] = player;
                 else
                     board[i][j] = opponent;
@@ -373,9 +379,21 @@ unsigned long long int hash_func(char** board){
     return ctr;
 }
 
+/*unsigned long long int hash_func(string str){
+    unsigned long long int ctr = 0;
+
+    for(int i = 0 ; i < M*N ; i++){
+        if(str[i] == '1')
+            ctr+=(pow(3,i));
+        else
+            ctr+=(2*pow(3,i));
+    }
+
+    return ctr;
+}*/
+
 /*unsigned long long int hash_func(char** board , char*** ZobristTable){
     unsigned long long int h = 0;
-
     for(int i = 0 ; i < M ; i++){
         for(int j = 0 ; j < N ; j++){
             if(board[i][j] == 'x')
@@ -384,6 +402,5 @@ unsigned long long int hash_func(char** board){
                 h ^= ZobristTable[i][j][1];
         }
     }
-
     return h;
 }*/

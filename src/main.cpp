@@ -6,6 +6,8 @@
 #include "generalised_tic_tac_toe_bitboard.h"
 #include "check_proof.h"
 
+int polyamino_type = 0;
+
 int main(){
   /*bitset<M*N> b1(string(bset1));
   bitset<M*N> b2(string(bset2));
@@ -15,13 +17,15 @@ int main(){
   construct_polyaminos(user_polyaminos);*/
 
   //pn_search_unified_main();
-  pn_search_DAG_main();
+  //pn_search_DAG_main();
   //pn2_search_main();
 
   //check_proof_main();
 
-  //CharSS game;
-  //monte_carlo_simulator_main(game);
-  //Bitboard game2;
-  //monte_carlo_simulator_main(game2);
+  //polyamino_type = 0;
+
+  CharSS game;
+  monte_carlo_simulator_main(game);
+  Bitboard game2;
+  monte_carlo_simulator_main(game2);
 }

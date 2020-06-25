@@ -10,9 +10,9 @@ using namespace std::chrono;
 #define inf -1
 
 bool isMobile = false;
-bool minimal_proof = true;
-bool policy_applied = true;
-bool minimal_policy_search = true;
+bool minimal_proof = false;
+bool policy_applied = false;
+bool minimal_policy_search = false;
 int depth_minimax = 1;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/

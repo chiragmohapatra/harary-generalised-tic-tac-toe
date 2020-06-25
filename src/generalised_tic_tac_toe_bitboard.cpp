@@ -3,11 +3,6 @@
 
 using namespace std;
 
-#define M 4
-#define N 4
-#define player 'x'
-#define opponent 'o'
-
 // Assume that white represents player and black represents opponent
 
 unsigned long long int hash_func(string str){
@@ -34,7 +29,7 @@ bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
     return temp;
 }
 
-int polyamino_type = 0; // 0 for Tippy , 1 for Fatty and 2 for Tic
+
 
 /*class Bitboard{
     public:

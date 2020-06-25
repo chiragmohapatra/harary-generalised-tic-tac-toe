@@ -13,7 +13,7 @@ void monte_carlo_simulator(const Game & game, int n){
 
     while(ctr < n){
         Game* g = game.clone();
-        bool isPlayer = true;
+        //bool isPlayer = true;
 
         while(!g->isTerminal()){
             r = rand() % N;
@@ -23,8 +23,8 @@ void monte_carlo_simulator(const Game & game, int n){
                 r = rand() % N;
                 c = rand() % M;
             }
-            g->make_move(isPlayer , r , c);
-            isPlayer = !isPlayer;
+            g->make_move(r , c);
+            //isPlayer = !isPlayer;
         }
         ctr++;
     }
@@ -45,15 +45,18 @@ void fast_monte_carlo_simulator(const Game & game, int n){
       const int index = rand() % maxi;
       const int move = moves[index];
 
-      g->make_move(isPlayer, move/M, move%M);
+      g->make_move(move/M, move%M);
       isPlayer = !isPlayer;
       maxi--;
       swap(moves[index], moves[maxi]);
     }
+
+    //g->print_board();
+    //cout<<endl<<endl;
   }
 }
 
-void monte_carlo_verifier(int n){
+/*void monte_carlo_verifier(int n){
     int ctr = 0 , r, c;
 
     Bitboard game;
@@ -80,8 +83,8 @@ void monte_carlo_verifier(int n){
             }
             assert(g2->isValidMove(r,c));
 
-            g->make_move(isPlayer , r , c);
-            g2->make_move(isPlayer , r , c);
+            g->make_move(r , c);
+            g2->make_move(r , c);
             if (g->print_as_string() != g2->print_as_string()) {
               cout << "move : " << r << " " << c << endl;
               cout << "bb : " << g->print_as_string() << endl;
@@ -94,10 +97,10 @@ void monte_carlo_verifier(int n){
 
         ctr++;
     }
-}
+}*/
 
 int monte_carlo_simulator_main(const Game & game){
-    int n = 1000000;
+    int n = 100000;
 
     auto start = high_resolution_clock::now();
     fast_monte_carlo_simulator(game, n);
