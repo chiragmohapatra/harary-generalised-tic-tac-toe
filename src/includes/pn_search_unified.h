@@ -2,6 +2,8 @@
 
 #define PN_SEARCH_UNIFIED_H
 
-int pn_search_unified_main();
+namespace pnSearchUnified {
+  int pn_search_unified_main();
+}
 
 #endif

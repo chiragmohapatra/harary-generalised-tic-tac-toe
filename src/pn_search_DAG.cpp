@@ -9,6 +9,8 @@ using namespace std::chrono;
 
 #define inf -1
 
+namespace pnSearchDAG
+{
 bool isMobile = false;
 bool minimal_proof = false;
 bool policy_applied = false;
@@ -28,8 +30,7 @@ Move policy(Game* game){
             opt.col = j;
             break;
         }
-    }  
-    
+    }
     return opt;
 }
 
@@ -50,15 +51,12 @@ int min(int a , int b){
 int ctr_nodes = 0;
 
 class pn_node{
-
     // Todo replace board with a hash value and make a hash map
-    
     public:
-
         Game* game; // Todo just store moves instead of complte game in each node
         vector<unsigned long long int> children; // an array of pointers to the children
         bool type; // true for OR node and false for AND node
-        char value; 
+        char value;
         bool isInternal; // true for internal node and false otherwise
         void generate_children(); // generates children of the node
         int no_of_children;
@@ -66,11 +64,11 @@ class pn_node{
 
         int proof_number , disproof_number , mpn , dmpn;
         vector<unsigned long long int> parents;
-        
+
         pn_node(Game* board);
 
         void set_parent(pn_node* par){
-            
+
             if(par == NULL)
                 type = true;
             else{
@@ -140,7 +138,7 @@ void pn_node::generate_children(){
                         if(i == opt_move.row && j == opt_move.col)
                             transposition_table[copygame->hashValue()] ->reco_by_policy = true;
                     }
-                    
+
                     //pn_node* child = new pn_node(game->board);
 
                     //undo the move
@@ -150,7 +148,6 @@ void pn_node::generate_children(){
                     children.push_back(copygame->hashValue());
                 }
 
-                
             }
         }
     }
@@ -270,10 +267,10 @@ void pn_node::setProofandDisproofNumbers(){
                     }
 
                 }
-                
+
                 break;
         }
-        
+
     }
 
     if(minimal_policy_search && reco_by_policy){
@@ -313,7 +310,7 @@ pn_node* pn_node::selectMostProvingNode(){
                         best = transposition_table[n->children[i]];
                         value = transposition_table[n->children[i]]->disproof_number;
                     }
-                
+
                 }
             }
 
@@ -345,7 +342,7 @@ pn_node* pn_node::selectMostProvingNode(){
                         best = transposition_table[n->children[i]];
                         value = transposition_table[n->children[i]]->dmpn;
                     }
-                
+
                 }
             }
 
@@ -415,7 +412,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
 }
 
 void store_proof(pn_node* root){
-    
+
     queue<pn_node*> q;
     q.push(root);
 
@@ -488,7 +485,7 @@ void store_proof(pn_node* root){
 
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
-    } 
+    }
 
     outfile4.close();
 }
@@ -504,7 +501,7 @@ void pn_search(pn_node* root){
         pn_node* most_proving = current->selectMostProvingNode();
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
-            
+
         /*if(ctr % 1000 == 0){
             cout<<root->proof_number<<"\t"<<root->disproof_number<<"\t"<<current->parents.size()<<endl;
             //current->print_data();
@@ -535,7 +532,7 @@ int pn_search_DAG_main(){
                 CharSS board(temp);
                 pn_node* root_mobile = new pn_node(&board);
                 root_mobile->set_parent(NULL);
-                
+
                 auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
                 auto stop = high_resolution_clock::now();
@@ -556,11 +553,11 @@ int pn_search_DAG_main(){
                     outfile1<<"Disproved\n";
 
                 auto duration = duration_cast<microseconds>(stop - start);
-                
-                outfile2<<duration.count()<<endl; 
+
+                outfile2<<duration.count()<<endl;
                 outfile3<<ctr_nodes<<endl;
 
-                
+
                 //delete root_mobile;
                 delete [] transposition_table;
             }
@@ -572,7 +569,7 @@ int pn_search_DAG_main(){
     outfile1.close();
     outfile2.close();
     outfile3.close();
-    
+
     return 0;
 }
-
+}

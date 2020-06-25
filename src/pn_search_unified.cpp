@@ -9,6 +9,9 @@ using namespace std::chrono;
 
 #define inf -1
 
+namespace pnSearchUnified
+{
+
 bool isMobile = false; // determines whether pn_search is mobile or not
 bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
 bool minimal_proof = true; // determines whether to run minimal proof search
@@ -33,8 +36,7 @@ Move policy(Game* game){
                 break;
             }
         }
-    }  
-    
+    }
     return opt;
 }
 
@@ -573,4 +575,5 @@ int pn_search_unified_main(){
     outfile3.close();
 
     return 0;
+}
 }

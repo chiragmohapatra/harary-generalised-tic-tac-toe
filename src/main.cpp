@@ -16,8 +16,8 @@ int main(){
   vector<bitset<M*N>> user_polyaminos({b1 , b2 , b3 , b4});
   construct_polyaminos(user_polyaminos);*/
 
-  //pn_search_unified_main();
-  //pn_search_DAG_main();
+  pnSearchUnified::pn_search_unified_main();
+  pnSearchDAG::pn_search_DAG_main();
   //pn2_search_main();
 
   //check_proof_main();
