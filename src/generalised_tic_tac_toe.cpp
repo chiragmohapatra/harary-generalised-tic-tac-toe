@@ -335,6 +335,7 @@ void CharSS::print_board(){
 string CharSS::print_as_string() const {
     string str;
     for(int i = 0 ; i < M ; i++){
+    //str.push_back('\n');
         for(int j = 0 ; j < N ; j++){
             if(board[i][j] == '_')
                 str.push_back('0');

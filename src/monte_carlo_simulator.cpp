@@ -44,7 +44,11 @@ void monte_carlo_verifier(int n){
             }
             isPlayer = !isPlayer;
         }
-          assert(g2->isTerminal());
+        if (!g2->isTerminal()) {
+          cout << "bb : " << g->print_as_string() << endl;
+          cout << "ss : " << g2->print_as_string() << endl;
+          assert(false);
+        }
 
         ctr++;
     }

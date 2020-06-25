@@ -18,6 +18,19 @@ unsigned long long int hash_func(string str){
     return ctr;
 }
 
+bitset<M*(2*N+2)> initializeEvens(){
+  bitset<M*(2*N+2)> target;
+  for(int i = 0; i < M*(2*N+2); i++){
+    if(i % 2 == 0){
+      target.set(i);
+    }
+  }
+  return target;
+}
+
+bitset<M*(2*N+2)> evens(initializeEvens());
+bitset<M*(2*N+2)> odds(initializeEvens()<<1);
+
 Bitboard::Bitboard(){
   legal_moves = M*N;
   is_player = true;
@@ -26,26 +39,25 @@ Bitboard::Bitboard(){
 
 Bitboard::Bitboard(string str){
   legal_moves = 0;
-  bitset<(M+1)*(N+1)> expanded_whites, expanded_blacks;
+  bitset<M*(2*N+2)> board;
   int cntw = 0 , cntb = 0;
-  int j = -1;
-  for(int i = 0 ; i < M*N ; i++){
-    if(i % N == 0) j++;
-    char c = str.at(i);
-    if(c == '1'){
-      expanded_whites.set(j);
-      cntw++;
+  for(int row = 0; row < M; row++){
+    for(int col = 0 ; col < N ; col++){
+      const int index = (2*N+2)*row + 2*col;
+      char c = str.at(N*row+col);
+      if(c == '1'){
+        board.set(index);
+        cntw++;
+      }
+      else if(c == '2'){
+        board.set(index+1);
+        cntb++;
+      }
+      else
+        legal_moves++;
     }
-    else if(c == '2'){
-      expanded_blacks.set(j);
-      cntb++;
-    }
-    else
-      legal_moves++;
   }
-
   is_player = cntw == cntb;
-
   hash_value = hash_func(str);
 }
 
@@ -54,8 +66,7 @@ Bitboard::~Bitboard(){
 
 Bitboard* Bitboard::clone() const {
   Bitboard* clone = new Bitboard();
-  clone->expanded_whites = expanded_whites;
-  clone->expanded_blacks = expanded_blacks;
+  clone->board = board;
   clone->legal_moves = legal_moves;
   clone->hash_value = hash_value;
   clone->is_player = is_player;
@@ -77,44 +88,64 @@ bool Bitboard::isMovesLeft(){
 }
 
 bool Bitboard::isTerminal(){
-  return evaluate() != 0;
+  bitset<M*(2*N+2)> t1;
+  switch(polyamino_type){
+  case 0:
+    t1 = board & (board >> 2*N+4); // here&right+down
+    if((t1 & (t1 >> 2)).any()) return true; // (.&rd)&(r&rdr)
+    if((t1 & (t1 >> 2*N+2)).any()) return true; // (.&rd)&(d&rdd)
+    t1 = board & (board << 2*N); // .&ru
+    if((t1 & (t1 >> 2)).any()) return true; // (.&ru)&(r&rur)
+    if((t1 & (t1 << 2*N+2)).any()) return true; // (.&ru)&(u&ruu)
+    break;
+  case 1:
+    t1 = board & (board >> 2); // here&right
+    if((t1 & (t1 >> 2*N+2)).any()) return true; // .&r&d&rd
+    break;
+  case 2:
+    t1 = board & (board >> 2);
+    if((t1 & (t1 >> 2)).any()) return true;
+    t1 = board & (board >> 2*N+2);
+    if((t1 & (t1 >> 2*N+2)).any()) return true;
+    break;
+  }
+  return !isMovesLeft();
 }
 
 int Bitboard::evaluate(){
-    bitset<(M+1)*(N+1)> t1;
+    bitset<M*(2*N+2)> t1, t2;
     switch(polyamino_type){
         case 0:
-            t1 = expanded_whites & (expanded_whites >> N+2); // here&right+down
-            if((t1 & (t1 >> 1)).any()) return 10; // (.&rd)&(r&rdr)
-            if((t1 & (t1 >> N+1)).any()) return 10; // (.&rd)&(d&rdd)
-            t1 = expanded_whites & (expanded_whites << N); // .&ru
-            if((t1 & (t1 >> 1)).any()) return 10; // (.&ru)&(r&rur)
-            if((t1 & (t1 << N+1)).any()) return 10; // (.&ru)&(u&ruu)
-
-            t1 = expanded_blacks & (expanded_blacks >> N+2);
-            if((t1 & (t1 >> 1)).any()) return -10;
-            if((t1 & (t1 >> N+1)).any()) return -10;
-            t1 = expanded_blacks & (expanded_blacks << N);
-            if((t1 & (t1 >> 1)).any()) return -10;
-            if((t1 & (t1 << N+1)).any()) return -10;
+            t1 = board & (board >> 2*N+4); // here&right+down
+            t2 = t1 & (t1 >> 2); // (.&rd)&(r&rdr)
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
+            t2 = t1 & (t1 >> 2*N+2); // (.&rd)&(d&rdd)
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
+            t1 = board & (board << 2*N); // .&ru
+            t2 = t1 & (t1 >> 2); // (.&ru)&(r&rur)
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
+            t2 = t1 & (t1 << 2*N+2); // (.&ru)&(u&ruu)
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
             break;
         case 1:
-            t1 = expanded_whites & (expanded_whites >> 1); // here&right
-            if((t1 & (t1 >> N+1)).any()) return 10; // .&r&d&rd
-
-            t1 = expanded_blacks & (expanded_blacks >> 1);
-            if((t1 & (t1 >> N+1)).any()) return -10;
+            t1 = board & (board >> 2); // here&right
+            t2 = t1 & (t1 >> 2*N+2); // .&r&d&rd
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return 10;
             break;
         case 2:
-            t1 = expanded_whites & (expanded_whites >> 1);
-            if((t1 & (t1 >> 1)).any()) return 10;
-            t1 = expanded_whites & (expanded_whites >> N+1);
-            if((t1 & (t1 >> N+1)).any()) return 10;
-
-            t1 = expanded_blacks & (expanded_blacks >> 1);
-            if((t1 & (t1 >> 1)).any()) return -10;
-            t1 = expanded_blacks & (expanded_blacks >> N+1);
-            if((t1 & (t1 >> N+1)).any()) return -10;
+            t1 = board & (board >> 2);
+            t2 = t1 & (t1 >> 2);
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
+            t1 = board & (board >> 2*N+2);
+            t2 = t1 & (t1 >> 2*N+2);
+            if((t2 & evens).any()) return 10;
+            if((t2 & odds).any()) return -10;
             break;
     }
 
@@ -128,16 +159,16 @@ int Bitboard::evaluate(){
 bool Bitboard::isValidMove(int row, int col) const {
   assert(row < M && col < N);
 
-  int index = (N+1)*row + col;
+  int index = (2*N+2)*row + 2*col;
 
-  return !expanded_whites.test(index) && !expanded_blacks.test(index);
+  return !board.test(index) && !board.test(index+1);
 }
 
 void Bitboard::make_move(int row , int col){
-  int index = (N+1)*row + col;
+  int index = (2*N+2)*row + 2*col;
 
-  if(is_player) expanded_whites.set(index);
-  else          expanded_blacks.set(index);
+  if(is_player) board.set(index);
+  else          board.set(index+1);
 
   legal_moves--;
   if(is_player) hash_value +=   pow(3,N*row+col);
@@ -146,10 +177,10 @@ void Bitboard::make_move(int row , int col){
 }
 
 void Bitboard::undo_move(int row , int col){
-  int index = (N+1)*row + col;
+  int index = (2*N+2)*row + 2*col;
 
-  expanded_whites.reset(index);
-  expanded_blacks.reset(index);
+  board.reset(index);
+  board.reset(index+1);
 
   legal_moves++;
   if(is_player) hash_value -=   pow(3,N*row+col);
@@ -184,34 +215,30 @@ vector<string> Bitboard::generateChildren(){
 }
 
 void Bitboard::print_board(){
-    for(int i = 0 ; i < M*(N+1) ; i++){
-        if(i % (N+1) == N)
-            cout<<endl;
-        else if(expanded_whites.test(i))
-            cout<<"x ";
-        else if(expanded_blacks.test(i))
-            cout<<"o ";
-        else
-            cout<<"_ ";
+  for(int row = 0; row < M; row++){
+    for(int col = 0 ; col < N ; col++){
+      const int index = (2*N+2)*row + 2*col;
+      if(board.test(index))         cout << "x ";
+      else if(board.test(index+1))  cout << "o ";
+      else                          cout << "_ ";
     }
+    cout<<endl;
+  }
 }
 
 string Bitboard::print_as_string() const {
-    string str;
-
-    for(int i = 0 ; i < M*(N+1) ; i++){
-//        if(i % (N+1) == N) str.push_back('\n');
-        if(i % (N+1) != N) {
-          if(expanded_whites.test(i))
-            str.push_back('1');
-          else if(expanded_blacks.test(i))
-            str.push_back('2');
-          else
-            str.push_back('0');
-        }
+  string str;
+  for(int row = 0; row < M; row++){
+    //str.push_back('\n');
+    for(int col = 0 ; col < N ; col++){
+      const int index = (2*N+2)*row + 2*col;
+      if(board.test(index))        str.push_back('1');
+      else if(board.test(index+1)) str.push_back('2');
+      else                         str.push_back('0');
     }
+  }
 
-    return str;
+  return str;
 }
 
 pair<bitset<M*N>,bitset<M*N>>* make_board_from_file(string str){

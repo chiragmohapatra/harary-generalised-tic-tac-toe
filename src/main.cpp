@@ -36,10 +36,11 @@ int main(){
   Bitboard game2;
 
   double seconds = 1;
+  int simulations = 100000;
+
   benchmark_time(game, seconds);
   benchmark_time(game2, seconds);
 
-  int simulations = 100000;
   benchmark_count(game, simulations);
   benchmark_count(game2, simulations);
 
