@@ -32,13 +32,16 @@ int main(){
 
   //polyamino_type = 0;
 
-  int n = 100000;
   CharSS game;
   Bitboard game2;
-  benchmark_count(game, n);
-  benchmark_count(game2, n);
 
   double seconds = 1;
   benchmark_time(game, seconds);
   benchmark_time(game2, seconds);
+
+  int simulations = 100000;
+  benchmark_count(game, simulations);
+  benchmark_count(game2, simulations);
+
+  monte_carlo_verifier(simulations);
 }

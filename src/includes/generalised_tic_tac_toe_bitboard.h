@@ -2,11 +2,6 @@
 
 #define GENERALISED_TIC_TAC_TOE_IMPROVED_H
 
-#define M 4
-#define N 4
-#define player 'x'
-#define opponent 'o'
-
 #include <bitset>
 #include "game.hpp"
 
@@ -29,7 +24,7 @@ class Bitboard: public Game{
         int legal_moves;
         unsigned long long int hash_value;
         bool is_player;
-        
+
         bool isMovesLeft(); //returns true if legal moves are left and false otherwise(completely filled board)
         bool isTerminal(); //returns true for a terminal position(player 1 win / player 1 lose / draw)
         int evaluate(); // return +10 for player 1 win , -10 for loss/draw and 0 for intermediate

@@ -67,9 +67,17 @@ CharSS::~CharSS(){
 }
 
 CharSS* CharSS::clone() const {
-  return new CharSS(print_as_string());
-}
+  CharSS* cl = new CharSS();
 
+  cl->legal_moves = legal_moves;
+  cl->hash_value = hash_value;
+  cl->is_player = is_player;
+  for(int i = 0 ; i < M ; i++){
+    for(int j = 0 ; j < N ; j++)
+      cl->board[i][j] = board[i][j];
+  }
+  return cl;
+}
 
 //returns true if legal moves are left and false otherwise(completely filled board)
 bool CharSS::isMovesLeft(){
