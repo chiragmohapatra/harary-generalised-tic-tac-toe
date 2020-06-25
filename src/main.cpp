@@ -16,7 +16,15 @@ int main(){
   vector<bitset<M*N>> user_polyaminos({b1 , b2 , b3 , b4});
   construct_polyaminos(user_polyaminos);*/
 
-  pnSearchUnified::pn_search_unified_main();
+  pnSearchUnified::Param pUnified;
+  pUnified.isMobile = false;
+  pUnified.delete_sub_trees = false;
+  pUnified.minimal_proof = true;
+  pUnified.policy_applied = false;
+  pUnified.depth_minimax = 1;
+  pUnified.minimal_policy = false;
+
+  pnSearchUnified::pn_search_unified_main(pUnified);
   pnSearchDAG::pn_search_DAG_main();
   //pn2_search_main();
 

@@ -12,20 +12,15 @@ using namespace std::chrono;
 namespace pnSearchUnified
 {
 
-bool isMobile = false; // determines whether pn_search is mobile or not
-bool delete_sub_trees = false; // determines whether sub trees will be deleted or not
-bool minimal_proof = true; // determines whether to run minimal proof search
-bool policy_applied = false;
-int depth_minimax = 1;
-bool minimal_policy = false; // determines whether to run minimal policy search or not
-
 int ctr_nodes = 0;
+
+Param param;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
 // return preffered move for a position
 Move policy(Game* game){
-    return findBestMove(game , depth_minimax);
+    return findBestMove(game , param.depth_minimax);
 
     Move opt;
     for(int i = 0; i < M; i++){
@@ -131,7 +126,7 @@ void pn_node::generate_children(){
 
     Move opt_move;
 
-    if(minimal_policy)
+    if(param.minimal_policy)
         opt_move = policy(game);
 
     for(int i = 0 ; i < M ; i++){
@@ -143,7 +138,7 @@ void pn_node::generate_children(){
 
                 pn_node* child = new pn_node(copygame);
 
-                if(minimal_policy){
+                if(param.minimal_policy){
                     if(opt_move.row == i && opt_move.col == j)
                         child->reco_by_policy = true;
                 }
@@ -255,7 +250,7 @@ void pn_node::setProofandDisproofNumbers(){
 
             case '2': //unknown
 
-                if(!isMobile){
+                if(!param.isMobile){
                     proof_number = 1;
                     disproof_number = 1;
                     mpn = 1;
@@ -283,7 +278,7 @@ void pn_node::setProofandDisproofNumbers(){
         }
     }
 
-    if(minimal_policy && reco_by_policy){
+    if(param.minimal_policy && reco_by_policy){
         if(mpn != inf)
             mpn--;
 
@@ -296,7 +291,7 @@ void pn_node::setProofandDisproofNumbers(){
 pn_node* pn_node::selectMostProvingNode(){
     pn_node* n = this;
 
-    if(!minimal_proof){
+    if(!param.minimal_proof){
         while(n->isInternal){
             int value;
             pn_node* best;
@@ -396,7 +391,7 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
         if(n->proof_number == old_proof && n->disproof_number == old_disproof)
             return n; // if unchanged , then return
 
-        if(delete_sub_trees){
+        if(param.delete_sub_trees){
             if(n->proof_number == 0){
                 n->delete_sub_tree();
                 /*n->value = '1';
@@ -420,7 +415,6 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
 }
 
 void store_proof(pn_node* root){
-    
     queue<pn_node*> q;
     q.push(root);
 
@@ -443,7 +437,7 @@ void store_proof(pn_node* root){
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
-                if(!policy_applied){
+                if(!param.policy_applied){
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->disproof_number == inf){
                             q.push(n->children[i]);
@@ -457,7 +451,7 @@ void store_proof(pn_node* root){
                     n->game->make_move(optimal_move.row , optimal_move.col);
                     string temp_board = n->game->print_as_string();
                     n->game->undo_move(optimal_move.row,optimal_move.col);
-                    
+
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         if(n->children[i]->game->print_as_string() == temp_board){
                             if(n->children[i]->disproof_number != inf){
@@ -525,7 +519,8 @@ void pn_search(pn_node* root){
     //store_proof(root);
 }
 
-int pn_search_unified_main(){
+int pn_search_unified_main(const Param & parameters){
+    param = parameters;
 
     fstream newfile , outfile1 , outfile2 , outfile3;
 
