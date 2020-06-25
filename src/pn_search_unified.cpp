@@ -13,6 +13,7 @@ namespace pnSearchUnified
 {
 
 int ctr_nodes = 0;
+int max_ctr = 0;
 
 Param param;
 
@@ -71,6 +72,8 @@ class pn_node{
             no_of_children = legals;
             isInternal = false;
             ctr_nodes++;
+            if(ctr_nodes > max_ctr)
+                max_ctr = ctr_nodes;
             evaluate_node();
             setProofandDisproofNumbers();
             // initialise pn , dn , mpn
@@ -487,6 +490,92 @@ void store_proof(pn_node* root){
     fstream outfile4;
     outfile4.open("./output/proof.txt",ios::out);
 
+    outfile4<<"Proof\n";
+
+    for(it = node_set.begin() ; it != node_set.end() ; it++){
+        outfile4<<*it<<endl;
+    }
+
+    outfile4.close();
+}
+
+void store_disproof(pn_node* root){
+    queue<pn_node*> q;
+
+    set<string> node_set;
+
+    node_set.insert(root->game->print_as_string());
+
+    for(int i = 0 ; i < root->no_of_children ; i++){
+        q.push(root->children[i]);
+        node_set.insert(root->children[i]->game->print_as_string());
+    }
+
+    while(!q.empty()){
+        pn_node* n = q.front();
+        q.pop();
+
+        if(n->type && !n->reco_by_policy){
+            //outfile4<<n->game->print_as_string()<<endl;
+            node_set.insert(n->game->print_as_string());
+        }
+
+        //node_set.insert(n->game->print_as_string());
+
+        if(n->isInternal){
+            if(!n->type){
+                // just store the child with the smallest mpn
+                if(!param.policy_applied){
+                    for(int i = 0 ; i < n->no_of_children ; i++){
+                        if(n->children[i]->proof_number == inf){
+                            q.push(n->children[i]);
+                            break;
+                        }
+                    }
+                }
+
+                else{
+                    Move optimal_move = policy(n->game);
+                    n->game->make_move(optimal_move.row , optimal_move.col);
+                    string temp_board = n->game->print_as_string();
+                    n->game->undo_move(optimal_move.row,optimal_move.col);
+
+                    for(int i = 0 ; i < n->no_of_children ; i++){
+                        if(n->children[i]->game->print_as_string() == temp_board){
+                            if(n->children[i]->proof_number != inf){
+                                for(int j = 0 ; j < n->no_of_children ; j++){
+                                    if(n->children[j]->proof_number == inf){
+                                        q.push(n->children[j]);
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
+
+                            else{
+                                n->children[i]->reco_by_policy = true;
+                                q.push(n->children[i]);
+                            }
+                        }
+                    }
+                }
+            }
+
+            else{
+                for(int i = 0 ; i < n->no_of_children ; i++){
+                    q.push(n->children[i]);
+                }
+
+            }
+        }
+    }
+
+    set<string>::iterator it;
+
+    fstream outfile4;
+    outfile4.open("./output/proof.txt",ios::out);
+
+    outfile4<<"Disproof\n";
 
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
@@ -543,19 +632,27 @@ int pn_search_unified_main(const Param & parameters){
                 pn_search(root_mobile);
                 auto stop = high_resolution_clock::now();
 
-                //auto start = high_resolution_clock::now();
-                store_proof(root_mobile);
-                //auto stop = high_resolution_clock::now();
-
-                if(root_mobile->proof_number == 0)
+                if(root_mobile->proof_number == 0){
                     outfile1<<"Proved\n";
-                else
-                    outfile1<<"Disproved\n";
+                    //auto start = high_resolution_clock::now();
+                    store_proof(root_mobile);
+                    //auto stop = high_resolution_clock::now();
+                }
 
-                auto duration = duration_cast<microseconds>(stop - start);
+                else{
+                    outfile1<<"Disproved\n";
+                    //auto start = high_resolution_clock::now();
+                    store_disproof(root_mobile);
+                    //auto stop = high_resolution_clock::now();
+                }
+
+                auto duration = duration_cast<milliseconds>(stop - start);
                 outfile2<<duration.count()<<endl;
 
-                outfile3<<ctr_nodes<<endl;
+                outfile3<<max_ctr<<endl;
+
+                ctr_nodes = 0;
+                max_ctr = 0;
 
                 cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
 

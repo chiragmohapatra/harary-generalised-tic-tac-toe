@@ -30,23 +30,12 @@ Move policyMove(Game* game){
     return opt;
 }
 
-bool check_proof(){
-    vector<string> nodes;
-
-    fstream newf;
-    newf.open("./output/proof.txt" , ios::in);
-    string temp;
-
-    while(getline(newf,temp)){
-        nodes.push_back(temp);
-    }
-
-    newf.close();
-
+bool check_proof(vector<string> &nodes){
+    
     queue<Game*> games;
 
     //Bitboard board(nodes[0]);
-    CharSS board(nodes[0]);
+    CharSS board(nodes[1]);
 
     Game* g = board.clone();
     // assert the node is a MAX node
@@ -122,36 +111,115 @@ bool check_proof(){
     return true;
 }
 
-/*bool check_proof(){
+bool check_disproof(vector<string> &nodes){
+    
+    queue<Game*> games;
+
+    //Bitboard board(nodes[0]);
+    CharSS board(nodes[1]);
+
+    Game* g = board.clone();
+    // assert the node is a MAX node
+    games.push(g);
+
+    while(!games.empty()){
+        Game* g1 = games.front();
+        games.pop();
+
+        int score = g1->evaluate();
+
+        if(score == 10){
+            g1->print_board();
+            //cout<<g1->print_as_string()<<endl;
+            return false;
+        }
+
+        else if(score == -10)
+            continue;
+
+        vector<string> temp = g1->generateChildren();
+
+        if(!g1->isPlayer()){
+            bool found = false;
+            vector<string>::iterator it;
+            string tp;
+
+            for(int i = 0 ; i < temp.size() ; i++){
+                it = find(nodes.begin() , nodes.end() , temp[i]);
+
+                if(it != nodes.end()){
+                    found = true;
+                    tp = temp[i];
+                    break;
+                }
+            }
+
+            if(!found){
+                //g1->print_board();
+                if(policy_app){
+                    Move policy_move = policyMove(g1);
+                    Game* copygame = g1->clone();
+                    copygame->make_move(policy_move.row , policy_move.col);
+                    games.push(copygame);
+                }
+
+                else{
+                    g1->print_board();
+                    return false;
+                }
+            }
+
+            else{
+                //Bitboard board(tp);
+                CharSS board(tp);
+
+                Game* g = board.clone();
+                games.push(g);
+            }
+        }
+
+        else{
+            for(int i = 0 ; i < temp.size() ; i++){
+                //Bitboard board(temp[i]);
+                CharSS board(temp[i]);
+
+                Game* g = board.clone();
+                games.push(g);
+            }
+        }
+    }
+
+    return true;
+}
+
+
+
+int check_proof_main(){
+
     vector<string> nodes;
 
-    fstream outfile2;
-    outfile2.open("./output/proof.txt",ios::in);
-
+    fstream newf;
+    newf.open("./output/proof.txt" , ios::in);
     string temp;
 
-    while(getline(outfile2,temp)){
+    while(getline(newf,temp)){
         nodes.push_back(temp);
     }
 
-    outfile2.close();
+    newf.close();
 
-    queue<Game*> test;
-
-    CharSS board(nodes[0]);
-
-
-}*/
-
-int check_proof_main(){
-    fstream outfile1;
-    outfile1.open("./output/output.txt",ios::out);
-
+    bool check;
+    
     auto start = high_resolution_clock::now();
-    bool check = check_proof();
+    if(nodes[0] == "Proof")
+        check = check_proof(nodes);
+    else
+        check = check_disproof(nodes);
     auto stop = high_resolution_clock::now();
 
     auto duration = duration_cast<microseconds>(stop - start);
+    fstream outfile1;
+    outfile1.open("./output/output.txt",ios::out);
     outfile1<<duration.count()<<endl;
 
     if(check)
