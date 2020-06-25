@@ -30,7 +30,8 @@ void monte_carlo_simulator(const Game & game, int n){
     }
 }
 
-void fast_monte_carlo_simulator(const Game & game, int n){
+int fast_simulator_count(const Game & game, int n){
+  auto start = high_resolution_clock::now();
   vector<int> moves;
   for(int i = 0; i < M*N; i++)
     if (game.isValidMove(i/M, i%M))
@@ -50,13 +51,47 @@ void fast_monte_carlo_simulator(const Game & game, int n){
       maxi--;
       swap(moves[index], moves[maxi]);
     }
-
-    //g->print_board();
-    //cout<<endl<<endl;
   }
+  auto stop = high_resolution_clock::now();
+  auto duration = duration_cast<milliseconds>(stop - start);
+  int ms = duration.count();
+  return ms;
 }
 
-/*void monte_carlo_verifier(int n){
+int fast_simulator_time(const Game & game, int seconds){
+  int target_ms = 1000*seconds;
+  vector<int> moves;
+  for(int i = 0; i < M*N; i++)
+    if (game.isValidMove(i/M, i%M))
+      moves.push_back(i);
+
+  int ctr = 0;
+  const int step = 10;
+  auto start = high_resolution_clock::now();
+  auto stop = high_resolution_clock::now();
+  while(duration_cast<milliseconds>(stop - start).count() < target_ms){
+    for(int i = 0; i < step; i++){
+      Game* g = game.clone();
+      int maxi = moves.size();
+      bool isPlayer = true;
+
+      while(!g->isTerminal()){
+        const int index = rand() % maxi;
+        const int move = moves[index];
+
+        g->make_move(move/M, move%M);
+        isPlayer = !isPlayer;
+        maxi--;
+        swap(moves[index], moves[maxi]);
+      }
+      ctr++;
+    }
+    stop = high_resolution_clock::now();
+  }
+  return ctr;
+}
+
+void monte_carlo_verifier(int n){
     int ctr = 0 , r, c;
 
     Bitboard game;
@@ -97,19 +132,17 @@ void fast_monte_carlo_simulator(const Game & game, int n){
 
         ctr++;
     }
-}*/
+}
 
-int monte_carlo_simulator_main(const Game & game){
-    int n = 100000;
+void benchmark_count(const Game & game, int simulations){
 
-    auto start = high_resolution_clock::now();
-    fast_monte_carlo_simulator(game, n);
-    auto stop = high_resolution_clock::now();
+    int ms = fast_simulator_count(game, simulations);
 
-    auto duration = duration_cast<microseconds>(stop - start);
+    cout << "Time taken by function: " << ms << " ms" << endl;
+}
 
-    cout << "Time taken by function: "
-         << duration.count() << " seconds" << endl;
+void benchmark_time(const Game & game, double seconds){
 
-    return 0;
+  int ctr = fast_simulator_time(game, seconds);
+  cout << ctr/1000. << "k simulations performed in " << seconds << " seconds." << endl;
 }

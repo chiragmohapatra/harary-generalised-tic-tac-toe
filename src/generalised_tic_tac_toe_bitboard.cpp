@@ -337,7 +337,6 @@ string Bitboard::print_as_string() const {
     }
 
     return str;
-    
 }
 
 pair<bitset<M*N>,bitset<M*N>>* make_board_from_file(string str){

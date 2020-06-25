@@ -3,6 +3,7 @@
 
 #include "game.hpp"
 
-int monte_carlo_simulator_main(const Game & start);
+void benchmark_count(const Game & start, int simulations);
+void benchmark_time(const Game & start, double seconds);
 
 #endif

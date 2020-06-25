@@ -24,16 +24,21 @@ int main(){
   pUnified.depth_minimax = 1;
   pUnified.minimal_policy = false;
 
-  pnSearchUnified::pn_search_unified_main(pUnified);
-  pnSearchDAG::pn_search_DAG_main();
+  //pnSearchUnified::pn_search_unified_main(pUnified);
+  //pnSearchDAG::pn_search_DAG_main();
   //pn2_search_main();
 
   //check_proof_main();
 
   //polyamino_type = 0;
 
+  int n = 100000;
   CharSS game;
-  monte_carlo_simulator_main(game);
   Bitboard game2;
-  monte_carlo_simulator_main(game2);
+  benchmark_count(game, n);
+  benchmark_count(game2, n);
+
+  double seconds = 1;
+  benchmark_time(game, seconds);
+  benchmark_time(game2, seconds);
 }
