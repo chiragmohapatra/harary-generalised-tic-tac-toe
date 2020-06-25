@@ -18,17 +18,6 @@ unsigned long long int hash_func(string str){
     return ctr;
 }
 
-bitset<(M+1)*(N+1)> expand_bitset_right_down(bitset<M*N> bset){
-    int size = M*N;
-    bitset<(M+1)*(N+1)> temp;
-
-    for(int i = 0 ; i < size ; i++){
-        temp[i + (N+2) + i/N] = bset[i];
-    }
-
-    return temp;
-}
-
 Bitboard::Bitboard(){
   legal_moves = M*N;
   is_player = true;
@@ -37,29 +26,27 @@ Bitboard::Bitboard(){
 
 Bitboard::Bitboard(string str){
   legal_moves = 0;
-  bitset<M*N> whites,blacks;
+  bitset<(M+1)*(N+1)> expanded_whites, expanded_blacks;
   int cntw = 0 , cntb = 0;
-
-    for(int i = 0 ; i < M*N ; i++){
-        char c = str.at(i);
-        if(c == '1'){
-            whites.set(i);
-            cntw++;
-        }
-        else if(c == '2'){
-            blacks.set(i);
-            cntb++;
-        }
-        else
-          legal_moves++;
+  int j = -1;
+  for(int i = 0 ; i < M*N ; i++){
+    if(i % N == 0) j++;
+    char c = str.at(i);
+    if(c == '1'){
+      expanded_whites.set(j);
+      cntw++;
     }
+    else if(c == '2'){
+      expanded_blacks.set(j);
+      cntb++;
+    }
+    else
+      legal_moves++;
+  }
 
-    expanded_whites = expand_bitset_right_down(whites);
-    expanded_blacks = expand_bitset_right_down(blacks);
+  is_player = cntw == cntb;
 
-    is_player = cntw == cntb;
-
-    hash_value = hash_func(str);
+  hash_value = hash_func(str);
 }
 
 Bitboard::~Bitboard(){
