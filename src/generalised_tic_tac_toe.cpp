@@ -138,8 +138,7 @@ bool CharSS::isTerminal(){
                             return true;
 
                         }
-
-                    } 
+                    }
                 }
             }
 
@@ -164,7 +163,7 @@ bool CharSS::isTerminal(){
                         return true;
 
                     if(i < (M-2) &&board[i][j] != '_' && board[i][j] == board[i+1][j] && board[i][j] == board[i+2][j])
-                        return true; 
+                        return true;
                 }
             }
 
@@ -228,8 +227,7 @@ int CharSS::evaluate(){
                                 return -10;
 
                         }
-
-                    } 
+                    }
                 }
             }
 
@@ -263,7 +261,7 @@ int CharSS::evaluate(){
                         if(board[i][j] == player)
                                 return 10;
                             else
-                                return -10; 
+                                return -10;
                     }
                 }
             }

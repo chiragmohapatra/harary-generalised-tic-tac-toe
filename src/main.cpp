@@ -42,12 +42,6 @@ void verifyCorrectness(){
 int main(){
   const bool enableBenchmarkSpeed = true;
   const bool enableVerifyCorrectness = true;
-  /*bitset<M*N> b1(string(bset1));
-  bitset<M*N> b2(string(bset2));
-  bitset<M*N> b3(string(bset3));
-  bitset<M*N> b4(string(bset4));
-  vector<bitset<M*N>> user_polyaminos({b1 , b2 , b3 , b4});
-  construct_polyaminos(user_polyaminos);*/
 
   pnSearchUnified::Param pUnified;
   pUnified.isMobile = false;
@@ -57,6 +51,8 @@ int main(){
   pUnified.depth_minimax = 1;
   pUnified.minimal_policy = false;
 
+  //pnSearchUnified::pn_search_unified_main(pUnified);
+  //pUnified.isMobile = true;
   //pnSearchUnified::pn_search_unified_main(pUnified);
   //pnSearchDAG::pn_search_DAG_main();
   //pn2_search_main();

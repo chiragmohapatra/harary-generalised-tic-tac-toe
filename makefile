@@ -5,7 +5,7 @@ OBJ_DIR := ./obj
 SRC_DIR := ./src
 OUT_DIR = ./output
 VPATH := $(SRC_DIR)
-CXXFLAGS := -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
+CXXFLAGS := -O2 -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
 
 SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp  $(SRC_DIR)/generalised_tic_tac_toe_bitboard.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/pn_search_DAG.cpp $(SRC_DIR)/check_proof.cpp $(SRC_DIR)/monte_carlo_simulator.cpp
 
