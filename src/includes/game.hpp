@@ -6,6 +6,7 @@
 
 #define M 4
 #define N 4
+#define table_size 1000000
 #define player 'x'
 #define opponent 'o'
 
