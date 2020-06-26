@@ -1,3 +1,4 @@
+#include <bits/stdc++.h>
 #include "pn_search_unified.h"
 #include "pn2_search.h"
 #include "pn_search_DAG.h"
@@ -8,7 +9,39 @@
 
 int polyamino_type = 0;
 
+void benchmarkSpeed(){
+  CharSS game;
+  Bitboard game2;
+
+  double seconds = 1;
+  int simulations = 100000;
+  int samples = 10;
+
+  for(int type = 0; type < 3; type++){
+    polyamino_type = type;
+    std::cout << "Polyomino  " << polyamino_type << "." << std::endl;
+    double charSSSimus = benchmark_time(game, seconds, samples);
+    double bitboardSimus = benchmark_time(game2, seconds, samples);
+    std::cout << "Average simulations per " << seconds <<" seconds. CharSS: " << charSSSimus << "k Bitboard: " << bitboardSimus << "k." << std::endl;
+
+    double charSSTime = benchmark_count(game, simulations, samples);
+    double bitboardTime = benchmark_count(game2, simulations, samples);
+    std::cout << "Average time per " << simulations <<" simulations. CharSS: " << charSSTime << "ms Bitboard: " << bitboardTime << "ms." << std::endl;
+  }
+}
+
+void verifyCorrectness(){
+  for(int type = 0; type < 3; type++){
+    polyamino_type = type;
+    std::cout << "Polyomino  " << polyamino_type << "." <<  std::endl;
+    monte_carlo_verifier(1000);
+    std::cout << "No difference detected between CharSS and Biboard." <<  std::endl;
+  }
+}
+
 int main(){
+  const bool enableBenchmarkSpeed = true;
+  const bool enableVerifyCorrectness = true;
   /*bitset<M*N> b1(string(bset1));
   bitset<M*N> b2(string(bset2));
   bitset<M*N> b3(string(bset3));
@@ -30,19 +63,6 @@ int main(){
 
   //check_proof_main();
 
-  //polyamino_type = 0;
-
-  CharSS game;
-  Bitboard game2;
-
-  double seconds = 1;
-  int simulations = 100000;
-
-  benchmark_time(game, seconds);
-  benchmark_time(game2, seconds);
-
-  benchmark_count(game, simulations);
-  benchmark_count(game2, simulations);
-
-  monte_carlo_verifier(simulations);
+  if (enableBenchmarkSpeed)    benchmarkSpeed();
+  if (enableVerifyCorrectness) verifyCorrectness();
 }

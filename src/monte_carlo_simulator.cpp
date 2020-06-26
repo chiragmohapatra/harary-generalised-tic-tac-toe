@@ -136,14 +136,26 @@ int fast_simulator_time(const Game & game, int seconds){
   return ctr;
 }
 
-void benchmark_count(const Game & game, int simulations){
-  int ms = fast_simulator_count(game, simulations);
+double benchmark_count(const Game & game, int simulations, int samples){
+  double total_time = 0;
 
-  cout << "Time taken by function: " << ms << " ms" << endl;
+  for(int i = 0; i < samples; i++) {
+    int ms = fast_simulator_count(game, simulations);
+    cerr << ms << "ms ";
+    total_time += ms;
+  }
+  cerr << endl;
+  return total_time / samples;
 }
 
-void benchmark_time(const Game & game, double seconds){
+double benchmark_time(const Game & game, double seconds, int samples){
+  double total_simulations = 0;
 
-  int ctr = fast_simulator_time(game, seconds);
-  cout << ctr/1000. << "k simulations performed in " << seconds << " seconds." << endl;
+  for(int i = 0; i < samples; i++) {
+    int simus = fast_simulator_time(game, seconds);
+    cerr << simus/1000. << "k ";
+    total_simulations += simus;
+  }
+  cerr << endl;
+  return total_simulations / samples / 1000;
 }
