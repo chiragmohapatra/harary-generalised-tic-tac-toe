@@ -6,6 +6,7 @@
 #include "generalised_tic_tac_toe.h"
 #include "generalised_tic_tac_toe_bitboard.h"
 #include "check_proof.h"
+#include "minimax.h"
 
 int polyamino_type = 0;
 
@@ -44,21 +45,28 @@ int main(){
   const bool enableVerifyCorrectness = true;
 
   pnSearchUnified::Param pUnified;
-  pUnified.isMobile = false;
-  pUnified.delete_sub_trees = false;
-  pUnified.minimal_proof = true;
-  pUnified.policy_applied = false;
-  pUnified.depth_minimax = 1;
-  pUnified.minimal_policy = false;
+  pnSearchDAG::Param pDAG;
+  pn2Search::Param p2;
+  checkProof::Param_check pCheck;
 
-  //pnSearchUnified::pn_search_unified_main(pUnified);
-  //pUnified.isMobile = true;
-  //pnSearchUnified::pn_search_unified_main(pUnified);
-  //pnSearchDAG::pn_search_DAG_main();
-  //pn2_search_main();
+  pUnified.isMobile = pDAG.isMobile = p2.isMobile = false;
+  pUnified.delete_sub_trees = p2.delete_sub_trees = false;
+  pUnified.minimal_proof = pDAG.minimal_proof = p2.minimal_proof = false;
+  pUnified.policy_applied = pDAG.policy_applied = p2.policy_applied = pCheck.policy_applied = true;
+  pUnified.depth_minimax = pDAG.depth_minimax = p2.depth_minimax = pCheck.depth_minimax = 3;
+  pUnified.minimal_policy = pDAG.minimal_policy = p2.minimal_policy = false;
+  pUnified.policy_type = pDAG.policy_type = p2.policy_type = pCheck.policy_type = 2;
+  pUnified.board_type = pDAG.board_type = p2.board_type = pCheck.board_type = 1; // 0 for CharSS and 1 for Bitboard
 
-  //check_proof_main();
+  pnSearchUnified::pn_search_unified_main(pUnified);
 
-  if (enableBenchmarkSpeed)    benchmarkSpeed();
-  if (enableVerifyCorrectness) verifyCorrectness();
+  //pnSearchUnified::verify_policies(pUnified);
+  
+  //pnSearchDAG::pn_search_DAG_main(pDAG);
+  //pn2_search_main(p2);
+
+  check_proof_main(pCheck);
+
+  //if (enableBenchmarkSpeed)    benchmarkSpeed();
+  //if (enableVerifyCorrectness) verifyCorrectness();
 }

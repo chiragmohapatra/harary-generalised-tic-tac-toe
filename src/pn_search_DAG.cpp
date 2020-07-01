@@ -11,27 +11,46 @@ using namespace std::chrono;
 
 namespace pnSearchDAG
 {
-bool isMobile = false;
-bool minimal_proof = false;
-bool policy_applied = false;
-bool minimal_policy_search = false;
-int depth_minimax = 1;
+    Param param;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
 Move policy(Game* game){
-    return findBestMove(game , depth_minimax);
+    if(param.policy_type == 1)
+        return findBestMove(game , param.depth_minimax);
 
-    Move opt;
-    for(int i = 0; i < M; i++){
-        for(int j = 0 ; j < N ; j++)
-        if(game->isValidMove(i,j)){
-            opt.row = i;
-            opt.col = j;
-            break;
+    else if(param.policy_type == 0){
+        Move opt;
+        for(int i = 0; i < M; i++){
+            for(int j = 0 ; j < N ; j++){
+                if(game->isValidMove(i,j)){
+                    opt.row = i;
+                    opt.col = j;
+                    break;
+                }
+            }
         }
+        return opt;
     }
-    return opt;
+
+    else{
+        Move opt ; int score_max = -100;
+        for(int i = 0; i < M; i++){
+            for(int j = 0 ; j < N ; j++){
+                if(game->isValidMove(i,j)){
+                    game->make_move(i,j);
+                    int temp_score = game->score();
+                    game->undo_move(i,j);
+                    if(temp_score > score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
+            }
+        }
+        return opt;
+    }
 }
 
 int min(int a , int b){
@@ -143,7 +162,7 @@ void pn_node::generate_children(){
 
     Move opt_move;
 
-    if(minimal_policy_search){
+    if(param.minimal_policy){
         opt_move = policy(game);
     }
 
@@ -161,7 +180,7 @@ void pn_node::generate_children(){
 
                 else{
                     my_table->insert_node(new pn_node(copygame));
-                    if(minimal_policy_search){
+                    if(param.minimal_policy){
                         if(i == opt_move.row && j == opt_move.col)
                             my_table->get_node(copygame->hashValue())->reco_by_policy = true;
                     }
@@ -273,7 +292,7 @@ void pn_node::setProofandDisproofNumbers(){
 
             case '2': //unknown
 
-                if(!isMobile){
+                if(!param.isMobile){
                     proof_number = 1;
                     disproof_number = 1;
                     mpn = 1;
@@ -302,7 +321,7 @@ void pn_node::setProofandDisproofNumbers(){
 
     }
 
-    if(minimal_policy_search && reco_by_policy){
+    if(param.minimal_policy && reco_by_policy){
         if(mpn != inf)
             mpn--;
 
@@ -315,7 +334,7 @@ void pn_node::setProofandDisproofNumbers(){
 pn_node* pn_node::selectMostProvingNode(){
     pn_node* n = this;
 
-    if(!minimal_proof){
+    if(!param.minimal_proof){
         while(n->isInternal){
             int value;
             pn_node* best;
@@ -469,7 +488,7 @@ void store_proof(pn_node* root){
         if(n->isInternal){
             if(n->type){
                 // just store the child with the smallest mpn
-                if(!policy_applied){
+                if(!param.policy_applied){
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         pn_node* temp = my_table->get_node(n->children[i]);
                         if(temp->disproof_number == inf){
@@ -556,7 +575,7 @@ void store_disproof(pn_node* root){
         if(n->isInternal){
             if(!n->type){
                 // just store the child with the smallest mpn
-                if(!policy_applied){
+                if(!param.policy_applied){
                     for(int i = 0 ; i < n->no_of_children ; i++){
                         pn_node* temp = my_table->get_node(n->children[i]);
                         if(temp->proof_number == inf){
@@ -640,7 +659,9 @@ void pn_search(pn_node* root){
     }
 }
 
-int pn_search_DAG_main(){
+int pn_search_DAG_main(const Param &parameters){
+
+    param = parameters;
 
     fstream newfile , outfile1 , outfile2 , outfile3;
 
@@ -649,7 +670,7 @@ int pn_search_DAG_main(){
     outfile2.open("./output/times_pn_search(in microseconds).txt",ios::out);
     outfile3.open("./output/nodes_pn_search.txt",ios::out);
 
-    unsigned long long int table_s = pow(3,M*N);
+    //unsigned long long int table_s = pow(3,M*N);
 
     if(newfile.is_open()){
         string temp;
@@ -658,36 +679,46 @@ int pn_search_DAG_main(){
             if(temp.length() == M*N){
                 //transposition_table = new pn_node*[table_s];
                 my_table = new TT();
-                //Bitboard board(temp);
-                CharSS board(temp);
-                pn_node* root_mobile = new pn_node(&board);
+                Game* board;
+                if(param.board_type == 1){
+                    board = new Bitboard(temp);
+                }
+                else{
+                    board = new CharSS(temp);
+                }
+
+                pn_node* root_mobile = new pn_node(board);
                 root_mobile->set_parent(NULL);
 
-                auto start = high_resolution_clock::now();
+                //auto start = high_resolution_clock::now();
                 pn_search(root_mobile);
-                auto stop = high_resolution_clock::now();
-
-                cout<<root_mobile->mpn<<" "<<root_mobile->dmpn<<endl;
+                //auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0){
                     outfile1<<"Proved\n";
-                    //auto start = high_resolution_clock::now();
+                    auto start = high_resolution_clock::now();
                     store_proof(root_mobile);
-                    //auto stop = high_resolution_clock::now();
+                    auto stop = high_resolution_clock::now();
+                    auto duration = duration_cast<milliseconds>(stop - start);
+                    cout<<duration.count()<<endl;
                 }
 
                 else{
                     outfile1<<"Disproved\n";
-                    //auto start = high_resolution_clock::now();
+                    auto start = high_resolution_clock::now();
                     store_disproof(root_mobile);
-                    //auto stop = high_resolution_clock::now();
+                    auto stop = high_resolution_clock::now();
+                    auto duration = duration_cast<milliseconds>(stop - start);
+                    cout<<duration.count()<<endl;
                 }
+                //auto stop = high_resolution_clock::now();
 
-                auto duration = duration_cast<microseconds>(stop - start);
+                //auto duration = duration_cast<milliseconds>(stop - start);
 
-                outfile2<<duration.count()<<endl;
+                //outfile2<<duration.count()<<endl;
                 outfile3<<ctr_nodes<<endl;
 
+                cout<<root_mobile->mpn<<" "<<root_mobile->dmpn<<" "<<endl;
 
                 //delete root_mobile;
                 //delete [] transposition_table;

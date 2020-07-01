@@ -4,40 +4,67 @@
 #include "../includes/minimax.h"
 #include "../includes/check_proof.h"
 
-bool policy_app = false;
-int minimaxdepth = 1;
-
 using namespace std;
 using namespace std::chrono;
 
 /* given a text file containing the positions involved in proof line by line , check whether the proof is correct */
 
-// return preffered move for a position
-Move policyMove(Game* game){
-    return findBestMove(game , minimaxdepth);
+namespace checkProof{
 
-    Move opt;
-    for(int i = 0; i < M; i++){
-        for(int j = 0 ; j < N ; j++){
-            if(game->isValidMove(i,j)){
-                opt.row = i;
-                opt.col = j;
-                break;
+    Param_check param;
+
+// return preffered move for a position
+Move policy(Game* game){
+    if(param.policy_type == 1)
+        return findBestMove(game , param.depth_minimax);
+
+    else if(param.policy_type == 0){
+        Move opt;
+        for(int i = 0; i < M; i++){
+            for(int j = 0 ; j < N ; j++){
+                if(game->isValidMove(i,j)){
+                    opt.row = i;
+                    opt.col = j;
+                    break;
+                }
             }
         }
-    }  
-    
-    return opt;
+        return opt;
+    }
+
+    else{
+        Move opt ; int score_max = -100;
+        for(int i = 0; i < M; i++){
+            for(int j = 0 ; j < N ; j++){
+                if(game->isValidMove(i,j)){
+                    game->make_move(i,j);
+                    int temp_score = game->score();
+                    game->undo_move(i,j);
+                    if(temp_score > score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
+            }
+        }
+        return opt;
+    }
 }
 
 bool check_proof(vector<string> &nodes){
     
     queue<Game*> games;
 
-    //Bitboard board(nodes[0]);
-    CharSS board(nodes[1]);
+    //Bitboard board(nodes[1]);
+    Game* g;
+    if(param.board_type == 1){
+        g = new Bitboard(nodes[1]);
+    }
+    else{
+        g = new CharSS(nodes[1]);
+    }
 
-    Game* g = board.clone();
     // assert the node is a MAX node
     games.push(g);
 
@@ -75,8 +102,8 @@ bool check_proof(vector<string> &nodes){
 
             if(!found){
                 //g1->print_board();
-                if(policy_app){
-                    Move policy_move = policyMove(g1);
+                if(param.policy_applied){
+                    Move policy_move = policy(g1);
                     Game* copygame = g1->clone();
                     copygame->make_move(policy_move.row , policy_move.col);
                     games.push(copygame);
@@ -89,20 +116,26 @@ bool check_proof(vector<string> &nodes){
             }
 
             else{
-                //Bitboard board(tp);
-                CharSS board(tp);
-
-                Game* g = board.clone();
+                Game* g;
+                if(param.board_type == 1){
+                    g = new Bitboard(tp);
+                }
+                else{
+                    g = new CharSS(tp);
+                }
                 games.push(g);
             }
         }
 
         else{
             for(int i = 0 ; i < temp.size() ; i++){
-                //Bitboard board(temp[i]);
-                CharSS board(temp[i]);
-
-                Game* g = board.clone();
+                Game* g;
+                if(param.board_type == 1){
+                    g = new Bitboard(temp[i]);
+                }
+                else{
+                    g = new CharSS(temp[i]);
+                }
                 games.push(g);
             }
         }
@@ -115,11 +148,14 @@ bool check_disproof(vector<string> &nodes){
     
     queue<Game*> games;
 
-    //Bitboard board(nodes[0]);
-    CharSS board(nodes[1]);
-
-    Game* g = board.clone();
-    // assert the node is a MAX node
+    Game* g;
+    if(param.board_type == 1){
+        g = new Bitboard(nodes[1]);
+    }
+    else{
+        g = new CharSS(nodes[1]);
+    }
+    
     games.push(g);
 
     while(!games.empty()){
@@ -156,8 +192,8 @@ bool check_disproof(vector<string> &nodes){
 
             if(!found){
                 //g1->print_board();
-                if(policy_app){
-                    Move policy_move = policyMove(g1);
+                if(param.policy_applied){
+                    Move policy_move = policy(g1);
                     Game* copygame = g1->clone();
                     copygame->make_move(policy_move.row , policy_move.col);
                     games.push(copygame);
@@ -170,20 +206,26 @@ bool check_disproof(vector<string> &nodes){
             }
 
             else{
-                //Bitboard board(tp);
-                CharSS board(tp);
-
-                Game* g = board.clone();
+                Game* g;
+                if(param.board_type == 1){
+                    g = new Bitboard(tp);
+                }
+                else{
+                    g = new CharSS(tp);
+                }
                 games.push(g);
             }
         }
 
         else{
             for(int i = 0 ; i < temp.size() ; i++){
-                //Bitboard board(temp[i]);
-                CharSS board(temp[i]);
-
-                Game* g = board.clone();
+                Game* g;
+                if(param.board_type == 1){
+                    g = new Bitboard(temp[i]);
+                }
+                else{
+                    g = new CharSS(temp[i]);
+                }
                 games.push(g);
             }
         }
@@ -194,7 +236,9 @@ bool check_disproof(vector<string> &nodes){
 
 
 
-int check_proof_main(){
+int check_proof_main(const Param_check & parameters){
+
+    param = parameters;
 
     vector<string> nodes;
 
@@ -217,7 +261,7 @@ int check_proof_main(){
         check = check_disproof(nodes);
     auto stop = high_resolution_clock::now();
 
-    auto duration = duration_cast<microseconds>(stop - start);
+    auto duration = duration_cast<milliseconds>(stop - start);
     fstream outfile1;
     outfile1.open("./output/output.txt",ios::out);
     outfile1<<duration.count()<<endl;
@@ -227,7 +271,14 @@ int check_proof_main(){
     else
         cout<<"Wrong proof\n";
 
+    cout<<duration.count()<<endl;
+
+    
+
+
     outfile1.close();
 
     return 0;
+}
+
 }

@@ -39,7 +39,7 @@ Bitboard::Bitboard(){
 
 Bitboard::Bitboard(string str){
   legal_moves = 0;
-  bitset<M*(2*N+2)> board;
+  //bitset<M*(2*N+2)> board;
   int cntw = 0 , cntb = 0;
   for(int row = 0; row < M; row++){
     for(int col = 0 ; col < N ; col++){
@@ -153,6 +153,24 @@ int Bitboard::evaluate(){
         return -10;
 
     return 0;
+}
+
+int Bitboard::score(){
+  int score = 0;
+  bitset<M*(2*N+2)> t1, t2;
+
+  switch(polyamino_type){
+      case 2:
+          t1 = board & (board >> 1);
+          t2 = t1 & (t1 >> 1);
+          score = score + (t2 & evens).count() - (t2 & odds).count();
+          t1 = board & (board >> 2*N);
+          t2 = t1 & (t1 >> 2*N);
+          score = score + (t2 & evens).count() - (t2 & odds).count();
+          break;        
+  }
+
+  return score;
 }
 
 // returns true if move made is valid
