@@ -13,12 +13,110 @@ namespace checkProof{
 
     Param_check param;
 
-// return preffered move for a position
-Move policy(Game* game){
-    if(param.policy_type == 1)
-        return findBestMove(game , param.depth_minimax);
+Move score_max_move(Game* game , bool is_proof){
+    Move opt ; int score_max;
+    if(is_proof)    score_max = -100;
+    else        score_max = 100;
+    
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                game->make_move(i,j);
+                int temp_score = game->score();
+                game->undo_move(i,j);
+                if(is_proof){
+                    if(temp_score > score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
 
-    else if(param.policy_type == 0){
+                else{
+                    if(temp_score < score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
+            }
+        }
+    }
+    return opt;
+}
+
+Move score_max_move(Game* game , coeff_score coeff , bool is_proof){
+    Move opt ; int score_max;
+    if(is_proof)    score_max = -100;
+    else        score_max = 100;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                game->make_move(i,j);
+                int temp_score = game->score(coeff);
+                game->undo_move(i,j);
+                if(is_proof){
+                    if(temp_score > score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
+
+                else{
+                    if(temp_score < score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                }
+            }
+        }
+    }
+    return opt;
+}
+
+Move minimax_move(Game* game , bool is_proof){
+    Move opt ; int score_max;
+    if(is_proof)    score_max = -100;
+    else        score_max = 100;
+    
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                game->make_move(i,j);
+                int temp_score = game->evaluate();
+                game->undo_move(i,j);
+                if(is_proof){
+                    if(temp_score > score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                    if(score_max == 10)
+                        break;
+                }
+
+                else{
+                    if(temp_score < score_max){
+                        opt.row = i;
+                        opt.col = j;
+                        score_max = temp_score;
+                    }
+                    if(score_max == -10)
+                        break;
+                }
+            }
+        }
+    }
+    return opt;
+
+}
+
+// return preffered move for a position
+Move policy(Game* game , bool is_proof){
+
+    if(param.policy_type == 0){
         Move opt;
         for(int i = 0; i < M; i++){
             for(int j = 0 ; j < N ; j++){
@@ -32,23 +130,15 @@ Move policy(Game* game){
         return opt;
     }
 
-    else{
-        Move opt ; int score_max = -100;
-        for(int i = 0; i < M; i++){
-            for(int j = 0 ; j < N ; j++){
-                if(game->isValidMove(i,j)){
-                    game->make_move(i,j);
-                    int temp_score = game->score();
-                    game->undo_move(i,j);
-                    if(temp_score > score_max){
-                        opt.row = i;
-                        opt.col = j;
-                        score_max = temp_score;
-                    }
-                }
-            }
-        }
-        return opt;
+    else if(param.policy_type == 1)
+        return minimax_move(game , is_proof);
+
+    else if(param.policy_type == 2){
+        return score_max_move(game , is_proof);
+    }
+
+    else if(param.policy_type == 3){
+        return score_max_move(game , param.coeff , is_proof);
     }
 }
 
@@ -103,7 +193,7 @@ bool check_proof(vector<string> &nodes){
             if(!found){
                 //g1->print_board();
                 if(param.policy_applied){
-                    Move policy_move = policy(g1);
+                    Move policy_move = policy(g1,true);
                     Game* copygame = g1->clone();
                     copygame->make_move(policy_move.row , policy_move.col);
                     games.push(copygame);
@@ -139,6 +229,8 @@ bool check_proof(vector<string> &nodes){
                 games.push(g);
             }
         }
+
+        delete g1;
     }
 
     return true;
@@ -193,7 +285,7 @@ bool check_disproof(vector<string> &nodes){
             if(!found){
                 //g1->print_board();
                 if(param.policy_applied){
-                    Move policy_move = policy(g1);
+                    Move policy_move = policy(g1,false);
                     Game* copygame = g1->clone();
                     copygame->make_move(policy_move.row , policy_move.col);
                     games.push(copygame);
@@ -229,6 +321,8 @@ bool check_disproof(vector<string> &nodes){
                 games.push(g);
             }
         }
+
+        delete g1;
     }
 
     return true;
@@ -271,7 +365,7 @@ int check_proof_main(const Param_check & parameters){
     else
         cout<<"Wrong proof\n";
 
-    cout<<duration.count()<<endl;
+    cout<<"Checking time :"<<duration.count()<<" ms"<<endl<<endl;
 
     
 

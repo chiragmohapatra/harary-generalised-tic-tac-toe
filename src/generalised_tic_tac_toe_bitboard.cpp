@@ -135,7 +135,7 @@ int Bitboard::evaluate(){
             t1 = board & (board >> 2); // here&right
             t2 = t1 & (t1 >> 2*N+2); // .&r&d&rd
             if((t2 & evens).any()) return 10;
-            if((t2 & odds).any()) return 10;
+            if((t2 & odds).any()) return -10;
             break;
         case 2:
             t1 = board & (board >> 2);
@@ -171,6 +171,10 @@ int Bitboard::score(){
   }
 
   return score;
+}
+
+int Bitboard::score(coeff_score coeff){
+  return 0;
 }
 
 // returns true if move made is valid

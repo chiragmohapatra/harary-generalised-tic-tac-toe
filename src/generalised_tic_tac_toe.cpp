@@ -209,7 +209,7 @@ int CharSS::evaluate(){
                         else if(i > 0 && i < (M-1) && board[i-1][j] == board[i][j] && board[i+1][j+1] == board[i][j]){ /* Represents a position like
                                                                                                                             |X|
                                                                                                                             |X||X|
-                                                                                                                            |X| */
+                                                                                                                               |X| */
                             if(board[i][j] == player)
                                 return 10;
                             else
@@ -276,6 +276,253 @@ int CharSS::evaluate(){
         return -10;
 
     return 0;
+}
+
+int CharSS::score(){
+    int i,j,score = 0;
+
+    int eval = evaluate();
+
+    if(eval == 10)
+        return 1000;
+
+    else if(eval == -10)
+        return -1000;
+
+    switch(polyamino_type){
+        case 0:
+            for(i = 0 ; i < M ; i++){
+                for(j = 0 ; j < N ; j++){
+                    if(j < (N-1) && board[i][j] != '_' && board[i][j] == board[i][j+1]){
+                        if(board[i][j] == player)
+                                score++;
+                        else
+                            score--;
+                    }
+
+                    if(i < (M-1) && board[i][j] != '_' && board[i][j] == board[i+1][j]){
+                        if(board[i][j] == player)
+                                score++;
+                        else
+                            score--;
+
+                        
+                    }
+                }
+            }
+
+            break;
+
+        case 2:
+            for(i = 0 ; i < M ; i++){
+                for(j = 0 ; j < N ; j++){
+                    if(j < (N-1) && board[i][j] != '_' && board[i][j] == board[i][j+1]){
+                        if(board[i][j] == player)
+                                score++;
+                        else
+                            score--;
+                    }
+
+                    if(i < (M-1) && board[i][j] != '_' && board[i][j] == board[i+1][j]){
+                        if(board[i][j] == player)
+                                score++;
+                        else
+                            score--;
+                    }
+                }
+            }
+
+            break;
+
+        default:
+            break;
+
+    }
+
+    return score;
+}
+
+int CharSS::score(coeff_score coeff){
+    int i,j,score = 0;
+
+    int eval = evaluate();
+
+    if(eval == 10)
+        return 1000;
+
+    else if(eval == -10)
+        return -1000;
+
+    switch(polyamino_type){
+        case 0:
+            for(i = 0 ; i < M ; i++){
+                for(j = 0 ; j < N ; j++){
+                    if(j < (N-1) && board[i][j] != '_' && board[i][j] == board[i][j+1]){ // represents |X||X|
+                        bool play = (board[i][j] == player);
+                        if(i < (M-1) && board[i+1][j+1] == board[i][j]){
+                            if(i > 0 && j < (N-2) && board[i-1][j] == '_' && board[i+1][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.first);
+                                else
+                                    score-=(coeff.first);
+                            }
+                            else if(i > 0 && board[i-1][j] == '_'){
+                                if(play)
+                                    score+=(coeff.second);
+                                else
+                                    score-=(coeff.second);
+                            }
+                            else if(j < (N-2) && board[i+1][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.second);
+                                else
+                                    score-=(coeff.second);
+                            }
+                        }
+
+                        if(i < (M-1) && board[i+1][j] == board[i][j]){
+                            if(i > 0 && j > 0 && board[i-1][j+1] == '_' && board[i+1][j-1] == '_'){
+                                if(play)
+                                    score+=(coeff.third);
+                                else
+                                    score-=(coeff.third);
+                            }
+                            else if(i > 0 && board[i-1][j+1] == '_'){
+                                if(play)
+                                    score+=(coeff.fourth);
+                                else
+                                    score-=(coeff.fourth);
+                            }
+                            else if(j > 0 && board[i+1][j-1] == '_'){
+                                if(play)
+                                    score+=(coeff.fourth);
+                                else
+                                    score-=(coeff.fourth);
+                            }
+                        }
+
+                        if(i > 0 && board[i-1][j] == board[i][j]){
+                            if(i < (M-1) && j > 0 && board[i-1][j-1] == '_' && board[i+1][j+1] == '_'){
+                                if(play)
+                                    score+=(coeff.fifth);
+                                else
+                                    score-=(coeff.fifth);
+                            }
+                            else if(j > 0 && board[i-1][j-1] == '_'){
+                                if(play)
+                                    score+=(coeff.sixth);
+                                else
+                                    score-=(coeff.sixth);
+                            }
+                            else if(i < (M-1) && board[i+1][j+1] == '_'){
+                                if(play)
+                                    score+=(coeff.sixth);
+                                else
+                                    score-=(coeff.sixth);
+                            }
+                        }
+
+                        if(i > 0 && board[i-1][j+1] == board[i][j]){
+                            if(j < (N-2) && i < (M-1) && board[i+1][j] == '_' && board[i-1][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.seventh);
+                                else
+                                    score-=(coeff.seventh);
+                            }
+                            else if(i < (M-1) && board[i+1][j] == '_'){
+                                if(play)
+                                    score+=(coeff.eighth);
+                                else
+                                    score-=(coeff.eighth);
+                            }
+                            else if(j < (N-2) && board[i-1][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.eighth);
+                                else
+                                    score-=(coeff.eighth);
+                            }
+                        }
+                    }
+                }
+            }
+
+            break;
+
+        case 2:
+            for(i = 0 ; i < M ; i++){
+                for(j = 0 ; j < N ; j++){
+                    if(board[i][j] != '_'){
+                        bool play = (board[i][j] == player);
+                        if(j < (N-1) && board[i][j] == board[i][j+1]){
+                            if(j > 0 && j < (N-2) && board[i][j-1] == '_' && board[i][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.first);
+                                else
+                                    score-=(coeff.first);
+                            }
+
+                            else if(j > 0 && board[i][j-1] == '_'){
+                                if(play)
+                                    score+=(coeff.second);
+                                else
+                                    score-=(coeff.second);
+                            }
+
+                            else if(j < (N-2) && board[i][j+2] == '_'){
+                                if(play)
+                                    score+=(coeff.second);
+                                else
+                                    score-=(coeff.second);
+                            }
+                        }
+
+                        if(j < (N-2) && board[i][j] == board[i][j+2] && board[i][j+1] == '_'){
+                            if(play)
+                                score+=(coeff.third);
+                            else
+                                score-=(coeff.third);
+                        }
+
+                        if(i < (M-1) && board[i][j] == board[i+1][j]){
+                            if(i > 0 && i < (M-2) && board[i+2][j] == '_' && board[i-1][j] == '_'){
+                                if(play)
+                                    score+=(coeff.fourth);
+                                else
+                                    score-=(coeff.fourth);
+                            }
+
+                            else if(i > 0 && board[i-1][j] == '_'){
+                                if(play)
+                                    score+=(coeff.fifth);
+                                else
+                                    score-=(coeff.fifth);
+                            }
+
+                            else if(i < (M-2) && board[i+2][j] == '_'){
+                                if(play)
+                                    score+=(coeff.fifth);
+                                else
+                                    score-=(coeff.fifth);
+                            }
+                        }
+
+                        if(i < (M-2) && board[i][j] == board[i+2][j] && board[i+1][j] == '_'){
+                            if(play)
+                                score+=(coeff.sixth);
+                            else
+                                score-=(coeff.sixth);
+                        }
+                    }
+                }
+            }
+
+            break;
+
+        default:
+            break;
+    }
+
+    return score;
 }
 
 bool CharSS::isValidMove(int row , int col) const {

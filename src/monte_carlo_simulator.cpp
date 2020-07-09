@@ -24,12 +24,12 @@ void monte_carlo_verifier(int n){
             assert(false);
           }
 
-            r = rand() % N;
+            r = rand() % M;
             c = rand() % N;
 
             while(!g->isValidMove(r,c)){
               assert(!g2->isValidMove(r,c));
-                r = rand() % N;
+                r = rand() % M;
                 c = rand() % N;
             }
             assert(g2->isValidMove(r,c));
@@ -63,17 +63,19 @@ void monte_carlo_simulator(const Game & game, int n){
         //bool isPlayer = true;
 
         while(!g->isTerminal()){
-            r = rand() % N;
-            c = rand() % M; // AS: Careful, this needs to be M to properly handle non-square boards.
+            r = rand() % M;
+            c = rand() % N; // AS: Careful, this needs to be M to properly handle non-square boards.
 
             while(!g->isValidMove(r,c)){
-                r = rand() % N;
-                c = rand() % M;
+                r = rand() % M;
+                c = rand() % N;
             }
             g->make_move(r , c);
             //isPlayer = !isPlayer;
         }
         ctr++;
+        g->print_board();
+        cout<<"\n\n";
     }
 }
 

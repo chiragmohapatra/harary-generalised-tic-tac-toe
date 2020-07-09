@@ -3,6 +3,7 @@
 #include "generalised_tic_tac_toe_bitboard.h"
 #include "minimax.h"
 #include "pn2_search.h"
+#include "check_proof.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -14,27 +15,99 @@ namespace pn2Search
 
 int ctr_nodes = 0;
 int max_ctr = 0;
+int size_of_proof = 0;
 
 Param param;
 
 /* Takes input of a game board and returns proved or disproved as applicable for the position assuming it is player's turn*/
 
-// return preffered move for a position
-Move policy(Game* game){
-    if(param.policy_type == 1)
-        return findBestMove(game , param.depth_minimax);
-
-    Move opt;
+Move score_max_move(Game* game){
+    Move opt ; int score_max = -100;
     for(int i = 0; i < M; i++){
         for(int j = 0 ; j < N ; j++){
             if(game->isValidMove(i,j)){
-                opt.row = i;
-                opt.col = j;
-                break;
+                game->make_move(i,j);
+                int temp_score = game->score();
+                game->undo_move(i,j);
+                if(temp_score > score_max){
+                    opt.row = i;
+                    opt.col = j;
+                    score_max = temp_score;
+                }
             }
         }
     }
     return opt;
+}
+
+Move score_max_move(Game* game , coeff_score coeff){
+    Move opt ; int score_max = -100;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                game->make_move(i,j);
+                int temp_score = game->score(coeff);
+                game->undo_move(i,j);
+                if(temp_score > score_max){
+                    opt.row = i;
+                    opt.col = j;
+                    score_max = temp_score;
+                }
+            }
+        }
+    }
+    return opt;
+}
+
+Move minimax_move(Game* game){
+    Move opt ; int score_max = -100;
+    for(int i = 0; i < M; i++){
+        for(int j = 0 ; j < N ; j++){
+            if(game->isValidMove(i,j)){
+                game->make_move(i,j);
+                int temp_score = game->evaluate();
+                game->undo_move(i,j);
+                if(temp_score > score_max){
+                    opt.row = i;
+                    opt.col = j;
+                    score_max = temp_score;
+                }
+                if(score_max == 10)
+                    break;
+            }
+        }
+    }
+    return opt;
+
+}
+
+// return preffered move for a position
+Move policy(Game* game){
+
+    if(param.policy_type == 0){
+        Move opt;
+        for(int i = 0; i < M; i++){
+            for(int j = 0 ; j < N ; j++){
+                if(game->isValidMove(i,j)){
+                    opt.row = i;
+                    opt.col = j;
+                    break;
+                }
+            }
+        }
+        return opt;
+    }
+
+    else if(param.policy_type == 1)
+        return minimax_move(game);
+
+    else if(param.policy_type == 2){
+        return score_max_move(game);
+    }
+
+    else if(param.policy_type == 3){
+        return score_max_move(game , param.coeff);
+    }
 }
 
 int min(int a , int b){
@@ -61,7 +134,7 @@ class pn_node{
         bool type; // true for OR node and false for AND node 
         pn_node* parent;
         char value;
-        pn_node** children; // an array of pointers to the children
+        vector<pn_node*> children; // an array of pointers to the children
         bool isInternal; // true for internal node and false otherwise
         int no_of_children;
         void generate_children(); // generates children of the node
@@ -91,16 +164,15 @@ class pn_node{
                 type = true;
             else
                 type = !(par->type);*/
-            //isInternal = false;
+            isInternal = false;
         }
 
         ~pn_node(){
             ctr_nodes--;
             delete game;
-            //delete children;
         }
 
-        void delete_sub_tree();
+        //void delete_sub_tree();
         void evaluate_node(); // sets value to '0' if disproven , '1' if proven and '2' if unknown
         void setProofandDisproofNumbers(); // sets the proof and disproof numbers as per the algorithm
         pn_node* selectMostProvingNode(); // selects the most proving node as per the specs
@@ -112,26 +184,10 @@ class pn_node{
         }
 };
 
-void pn_node::delete_sub_tree(){
-    // find better way
-    if(value == '1' || value == '0')
-        return;
-
-    for(int i = 0 ; i < no_of_children ; i++)
-        delete children[i];
-
-    delete [] children;
-    isInternal = false;
-    //no_of_children = 0;
-}
-
 void pn_node::generate_children(){
 
     if(no_of_children == 0)
         return;
-
-    int k = 0;
-    children = new pn_node*[no_of_children];
 
     Move opt_move;
 
@@ -151,13 +207,9 @@ void pn_node::generate_children(){
                     if(opt_move.row == i && opt_move.col == j)
                         child->reco_by_policy = true;
                 }
-                //pn_node* child = new pn_node(game->board);
-
-                //undo the move
-                //game->undo_move(i,j);
 
                 child->set_parent(this);
-                children[k++] = child;
+                children.push_back(child);
             }
         }
     }
@@ -369,24 +421,9 @@ pn_node* pn_node::selectMostProvingNode(){
 }
 
 void pn_node::ExpandNode(){
-    if(value == '1' || value == '0' || isInternal)
+    if(value == '1' || value == '0')
         return;
     generate_children();
-
-    /*for(int i = 0 ; i < no_of_children ; i++){
-        //children[i]->evaluate_node();
-        //children[i]->setProofandDisproofNumbers();
-
-        if(type){ // OR node
-            if(children[i]->proof_number == 0)
-                break;
-        }
-
-        else{
-            if(children[i]->disproof_number == 0)
-                break;
-        }
-    }*/
 
     isInternal = true;
 }
@@ -399,22 +436,6 @@ pn_node* update_ancestors(pn_node* n , pn_node* root){
 
         if(n->proof_number == old_proof && n->disproof_number == old_disproof)
             return n; // if unchanged , then return
-
-        if(param.delete_sub_trees){
-            if(n->proof_number == 0){
-                n->delete_sub_tree();
-                /*n->value = '1';
-                n->proof_number = 0;
-                n->disproof_number = inf;*/
-            }
-
-            else if(n->disproof_number == 0){
-                n->delete_sub_tree();
-                /*n->value = '0';
-                n->proof_number = inf;
-                n->disproof_number = 0;*/
-            }
-        }
 
         n = n->parent;
     }
@@ -440,6 +461,9 @@ void store_proof(pn_node* root){
             //outfile4<<n->game->print_as_string()<<endl;
             node_set.insert(n->game->print_as_string());
         }
+
+        if(n->reco_by_policy)
+            n->reco_by_policy = false;
 
         //node_set.insert(n->game->print_as_string());
 
@@ -500,6 +524,7 @@ void store_proof(pn_node* root){
 
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
+        size_of_proof++;
     }
 
     outfile4.close();
@@ -527,6 +552,8 @@ void store_disproof(pn_node* root){
         }
 
         //node_set.insert(n->game->print_as_string());
+        if(n->reco_by_policy)
+            n->reco_by_policy = false;
 
         if(n->isInternal){
             if(!n->type){
@@ -585,19 +612,36 @@ void store_disproof(pn_node* root){
 
     for(it = node_set.begin() ; it != node_set.end() ; it++){
         outfile4<<*it<<endl;
+        size_of_proof++;
     }
 
     outfile4.close();
 }
 
-void delete_complete_tree(pn_node* root){
-    if(root == NULL)
+void form_stack(stack<pn_node*> &node_stack , pn_node* n){
+    node_stack.push(n);
+
+    if(n->children.size() == 0)
         return;
 
-    for(int i = 0 ; i < root->no_of_children && root->isInternal ; i++)
-        delete_complete_tree(root->children[i]);
+    else{
+        for(int i = 0 ; i < n->children.size() ; i++){
+            form_stack(node_stack , n->children[i]);
+        }
+    }
+}
 
-    delete root;
+void delete_complete_subtree(pn_node* n){
+    stack<pn_node*> node_stack;
+    form_stack(node_stack , n);
+
+    while(!node_stack.empty()){
+        pn_node* m = node_stack.top();
+        node_stack.pop();
+        m->children.clear();
+    }
+
+    n->isInternal = false;
 }
 
 void pn_search_second(pn_node* root , int itr){
@@ -606,21 +650,12 @@ void pn_search_second(pn_node* root , int itr){
     pn_node* current = root;
     int ctr = 0;
 
-    //outfile4.open("./output/proof.txt",ios::out);
-
     while(root->proof_number != 0 && root->disproof_number != 0 && ctr < itr){
         pn_node* most_proving = current->selectMostProvingNode();
-        //outfile4<<most_proving->game->print_as_string()<<endl;
         most_proving->ExpandNode();
         current = update_ancestors(most_proving , root);
-        if(ctr % 1000 == 0){
-            //cout<<root->proof_number<<" "<<root->disproof_number<<" "<<root->mpn<<" "<<root->dmpn<<endl;
-            //current->print_data();
-        }
         ctr++;
     }
-
-    //store_proof(root);
 }
 
 void pn_search_first(pn_node* root){
@@ -630,24 +665,96 @@ void pn_search_first(pn_node* root){
 
     while(root->proof_number != 0 && root->disproof_number != 0){
         pn_node* most_proving = root->selectMostProvingNode();
-        //most_proving->print_data();
         ctr++;
-        pn_search_second(most_proving , ctr);
+        pn_search_second(most_proving , 100000);
         root->setProofandDisproofNumbers();
         //cout<<most_proving->proof_number<<" "<<most_proving->disproof_number<<endl;
 
         if(root->proof_number == 0)
             break;
-
-        /*for(int i = 0 ; i < most_proving->no_of_children && most_proving != root ; i++){
-            delete_complete_tree(most_proving->children[i]);
-        }*/
-        //cout<<most_proving->proof_number<<" "<<most_proving->disproof_number<<endl;
-
-        //most_proving->isInternal = false;
-        //most_proving->no_of_children = 0;
+        delete_complete_subtree(most_proving);
     }
 }
+
+/*void verify_policies(const Param &parameters){
+    param = parameters;
+    fstream newfile;
+
+    checkProof::Param_check pCheck;
+    pCheck.board_type = param.board_type;
+    pCheck.depth_minimax = param.depth_minimax;
+
+    newfile.open("input.txt",ios::in);
+
+    if(newfile.is_open()){
+        string temp;
+
+        while(getline(newfile , temp)){
+            if(temp.length() == M*N){
+                Game* board;
+                if(param.board_type == 1){
+                    board = new Bitboard(temp);
+                }
+                else{
+                    board = new CharSS(temp);
+                }
+                cout<<"Input: "<<temp<<" ";
+
+                pn_node* root_mobile = new pn_node(board);
+                
+                root_mobile->set_parent(NULL);
+
+                pn_search(root_mobile);
+
+                if(root_mobile->proof_number == 0){
+                    cout<<"Proof\n";
+                    for(int i = -1 ; i < 3 ; i++){
+                        if(i == -1)
+                            param.policy_applied = pCheck.policy_applied = false;
+                        else
+                            param.policy_applied = pCheck.policy_applied = true;
+
+                        param.policy_type = pCheck.policy_type = i;
+                        auto start = high_resolution_clock::now();
+                        store_proof(root_mobile);
+                        auto stop = high_resolution_clock::now();
+                        auto duration = duration_cast<milliseconds>(stop - start);
+                        //cout<<i<<" "<<duration.count()<<" "<<size_of_proof<<endl;
+                        cout<<"Policy type: "<<i<<" , Duration for creating proof : "<<duration.count()<<" ms , Size of proof : "<<size_of_proof<<endl;
+                        check_proof_main(pCheck);
+                        size_of_proof = 0;
+                    }
+                }
+
+                else{
+                    cout<<"Disproof\n";
+                    for(int i = -1 ; i < 3 ; i++){
+                        if(i == -1)
+                            param.policy_applied = pCheck.policy_applied = false;
+                        else
+                            param.policy_applied = pCheck.policy_applied = true;
+
+                        param.policy_type = pCheck.policy_type = i;
+                        auto start = high_resolution_clock::now();
+                        store_disproof(root_mobile);
+                        auto stop = high_resolution_clock::now();
+                        auto duration = duration_cast<milliseconds>(stop - start);
+                        //cout<<i<<" "<<duration.count()<<" "<<size_of_proof<<endl;
+                        cout<<"Policy type: "<<i<<" , Duration for creating proof : "<<duration.count()<<" ms , Size of proof : "<<size_of_proof<<endl;
+                        check_proof_main(pCheck);
+                        size_of_proof = 0;
+                    }
+
+                }
+
+                //delete board;
+                delete root_mobile;
+            }
+        }
+    }
+
+    newfile.close();
+}*/
 
 int pn2_search_main(const Param & parameters){
     param = parameters;
@@ -673,41 +780,48 @@ int pn2_search_main(const Param & parameters){
                 }
 
                 pn_node* root_mobile = new pn_node(board);
+                
                 root_mobile->set_parent(NULL);
 
-                auto start = high_resolution_clock::now();
+                //cout<<root_mobile->game->print_as_string()<<"\t"<<temp<<"\t"<<board.print_as_string()<<endl;
+
+                //auto start = high_resolution_clock::now();
                 pn_search_first(root_mobile);
-                auto stop = high_resolution_clock::now();
+                //auto stop = high_resolution_clock::now();
 
                 if(root_mobile->proof_number == 0){
                     outfile1<<"Proved\n";
-                    //auto start = high_resolution_clock::now();
+                    auto start = high_resolution_clock::now();
                     store_proof(root_mobile);
-                    //auto stop = high_resolution_clock::now();
+                    auto stop = high_resolution_clock::now();
+                    auto duration = duration_cast<milliseconds>(stop - start);
+                    cout<<size_of_proof<<endl;
+                    size_of_proof = 0;
                 }
 
                 else{
                     outfile1<<"Disproved\n";
-                    //auto start = high_resolution_clock::now();
+                    auto start = high_resolution_clock::now();
                     store_disproof(root_mobile);
-                    //auto stop = high_resolution_clock::now();
+                    auto stop = high_resolution_clock::now();
+                    auto duration = duration_cast<milliseconds>(stop - start);
+                    cout<<size_of_proof<<endl;
+                    size_of_proof = 0;
                 }
+                //auto stop = high_resolution_clock::now();
 
-                auto duration = duration_cast<milliseconds>(stop - start);
-                outfile2<<duration.count()<<endl;
+                //auto duration = duration_cast<milliseconds>(stop - start);
+                //outfile2<<duration.count()<<endl;
 
-                outfile3<<max_ctr<<endl;
+                //outfile3<<max_ctr<<endl;
+
+                //cout<<root_mobile->mpn<<"\t"<<root_mobile->dmpn<<endl;
+                cout<<root_mobile->proof_number<<"\t"<<root_mobile->disproof_number<<"\t"<<max_ctr<<endl;
 
                 ctr_nodes = 0;
                 max_ctr = 0;
 
-                for(int i = 0 ; i < root_mobile->no_of_children ; i++){
-                    cout<<root_mobile->children[i]->proof_number<<" "<<root_mobile->children[i]->disproof_number<<endl;
-                }
-
-                cout<<root_mobile->proof_number<<"\t"<<root_mobile->disproof_number<<"\t"<<root_mobile->mpn<<endl;
-
-//                delete root_mobile;
+                delete root_mobile;
             }
         }
     }

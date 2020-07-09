@@ -131,7 +131,49 @@ Move findBestMove(Game* game , int maxdepth){
   
                 // compute evaluation function for this 
                 // move. 
-                int moveVal = minimax(game, 0, false , neginf , inf , maxdepth); //iniialise alpha as -inf and beta as +inf
+                int moveVal = minimax(game, 0, !game->isPlayer() , neginf , inf , maxdepth); //iniialise alpha as -inf and beta as +inf
+  
+                // Undo the move 
+                game->undo_move(i,j);
+  
+                // If the value of the current move is 
+                // more than the best value, then update 
+                // best 
+                if (moveVal > bestVal) 
+                { 
+                    bestMove.row = i; 
+                    bestMove.col = j; 
+                    bestVal = moveVal; 
+                } 
+            } 
+        } 
+    } 
+  
+    return bestMove; 
+} 
+
+Move minimax_score(Game* game , int maxdepth){
+    int bestVal = 0; 
+    Move bestMove; 
+    bestMove.row = -1; 
+    bestMove.col = -1; 
+  
+    /*Traverse all cells, evaluate minimax function for 
+      all empty cells. And return the cell with optimal 
+      value.*/ 
+    for (int i = 0; i < M; i++) 
+    { 
+        for (int j = 0; j < N; j++) 
+        { 
+            // Check if cell is empty 
+            if (game->isValidMove(i,j)) 
+            { 
+                // Make the move 
+                game->make_move(i,j);
+  
+                // compute evaluation function for this 
+                // move. 
+                int moveVal = minimax(game, 0, !game->isPlayer() , neginf , inf , maxdepth); //iniialise alpha as -inf and beta as +inf
   
                 // Undo the move 
                 game->undo_move(i,j);
