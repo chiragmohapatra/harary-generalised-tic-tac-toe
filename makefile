@@ -7,11 +7,11 @@ OUT_DIR = ./output
 VPATH := $(SRC_DIR)
 CXXFLAGS := -O2 -I $(INC_DIR) #-pedantic-errors -Wall -Wextra -Werror
 
-SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp  $(SRC_DIR)/generalised_tic_tac_toe_bitboard.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/pn_search_DAG.cpp $(SRC_DIR)/check_proof.cpp $(SRC_DIR)/monte_carlo_simulator.cpp
+SRC := $(SRC_DIR)/generalised_tic_tac_toe.cpp  $(SRC_DIR)/generalised_tic_tac_toe_bitboard.cpp $(SRC_DIR)/main.cpp $(SRC_DIR)/minimax.cpp $(SRC_DIR)/pn_search_unified.cpp $(SRC_DIR)/pn_search_DAG.cpp $(SRC_DIR)/pn2_search.cpp $(SRC_DIR)/check_proof.cpp $(SRC_DIR)/monte_carlo_simulator.cpp
 
 OBJECTS := $(subst $(SRC_DIR),$(OBJ_DIR),$(SRC:%.cpp=%.o))
 LIBS := $(LIB_DIR)/generalised_tic_tac_toe.a $(LIB_DIR)/minimax.a
-HEADERS := $(INC_DIR)/generalised_tic_tac_toe.h $(INC_DIR)/minimax.h
+HEADERS := $(INC_DIR)/generalised_tic_tac_toe.h $(INC_DIR)/minimax.h $(INC_DIR)/generalised_tic_tac_toe_bitboard.h $(INC_DIR)/pn_search_unified.h $(INC_DIR)/pn2_search.h $(INC_DIR)/pn_search_DAG.h $(INC_DIR)/check_proof.h $(INC_DIR)/game.hpp
 EXEC := $(BIN_DIR)/exec
 
 .PHONY: all clean execute
