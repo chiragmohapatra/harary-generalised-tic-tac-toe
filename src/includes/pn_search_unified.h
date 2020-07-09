@@ -2,6 +2,8 @@
 
 #define PN_SEARCH_UNIFIED_H
 
+#include "game.hpp"
+
 namespace pnSearchUnified {
 
 struct Param {
@@ -13,10 +15,11 @@ struct Param {
   bool minimal_policy; // determines whether to run minimal policy search or not
   int policy_type; // 0 for first move , 1 for minimax
   int board_type; // 0 for CharSS and 1 for Bitboard
+  coeff_score coeff;
 };
 
 int pn_search_unified_main(const Param & parameters);
-void verify_policies(const Param & parameters);
+void generate_time_and_memory(const Param &parameters);
 }
 
 #endif
